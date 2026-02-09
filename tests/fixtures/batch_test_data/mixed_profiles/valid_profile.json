@@ -1,0 +1,23 @@
+{
+    "name": "Valid Mixed Profile",
+    "id": "mixed-valid-1",
+    "author": "test_fixture",
+    "author_id": "test",
+    "temperature": 93.0,
+    "final_weight": 38.0,
+    "stages": [
+        {
+            "name": "Simple Extraction",
+            "key": "simple",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 85]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "weight", "value": 38.0, "relative": true, "comparison": ">="}
+            ]
+        }
+    ]
+}

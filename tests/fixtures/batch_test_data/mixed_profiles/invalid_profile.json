@@ -1,0 +1,23 @@
+{
+    "name": "Invalid JSON Profile",
+    "id": "invalid-1",
+    "author": "test_fixture",
+    "author_id": "test",
+    "temperature": 93.0,
+    "final_weight": 36.0,
+    "stages": [
+        {
+            "name": "Broken Stage"
+            "key": "broken",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 90]]
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "weight", "value": 36.0, "relative": true, "comparison": ">="}
+            ]
+        }
+    ]
+}

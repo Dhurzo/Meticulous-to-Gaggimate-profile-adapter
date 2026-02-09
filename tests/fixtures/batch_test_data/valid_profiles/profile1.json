@@ -1,0 +1,49 @@
+{
+    "name": "Basic Profile",
+    "id": "basic-1",
+    "author": "test_fixture",
+    "author_id": "test",
+    "temperature": 92.0,
+    "final_weight": 36.0,
+    "stages": [
+        {
+            "name": "Fill",
+            "key": "fill",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 60]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "time", "value": 3.0, "relative": true, "comparison": ">="}
+            ]
+        },
+        {
+            "name": "Bloom",
+            "key": "bloom",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 30]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "time", "value": 5.0, "relative": true, "comparison": ">="}
+            ]
+        },
+        {
+            "name": "Extraction",
+            "key": "ext",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 90]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "weight", "value": 36.0, "relative": true, "comparison": ">="}
+            ]
+        }
+    ]
+}
