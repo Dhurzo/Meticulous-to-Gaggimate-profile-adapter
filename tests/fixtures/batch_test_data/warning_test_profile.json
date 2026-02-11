@@ -1,0 +1,25 @@
+{
+    "name": "Warning Test Profile",
+    "id": "warning-test-1",
+    "author": "test_fixture",
+    "author_id": "test",
+    "temperature": 93.0,
+    "final_weight": 36.0,
+    "stages": [
+        {
+            "name": "Test Stage with Warnings",
+            "key": "test",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 50], [10, 90]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "weight", "value": 36.0, "relative": false, "comparison": ">="},
+                {"type": "weight", "value": 30.0, "relative": false, "comparison": "<="},
+                {"type": "piston_position", "value": 50, "relative": false, "comparison": ">="}
+            ]
+        }
+    ]
+}

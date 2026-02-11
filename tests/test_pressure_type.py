@@ -30,7 +30,7 @@ def test_pressure_type_basic():
         "stages": [create_pressure_stage("Test Stage", 5.0)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     assert phase["pump"]["target"] == "pressure"
@@ -53,7 +53,7 @@ def test_pressure_type_parametrized(pressure_value: float):
         "stages": [create_pressure_stage("Test Stage", pressure_value)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     assert phase["pump"]["target"] == "pressure"
@@ -75,7 +75,7 @@ def test_pressure_type_rejects_power_division():
         "stages": [create_pressure_stage("Test Stage", 5.0)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     # Should be 5.0, not 0.5 (which would happen if divided by 10)
@@ -107,7 +107,7 @@ def test_pressure_type_multi_point():
         "stages": [multi_point_stage],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
 
     # Should create 1 phase from 2 points
     assert len(result["phases"]) == 1

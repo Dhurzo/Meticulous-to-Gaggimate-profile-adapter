@@ -5,6 +5,7 @@ from typing import Any
 # Typical brewing pressure range (bar)
 MIN_PRESSURE = 1.0
 MAX_PRESSURE = 10.0
+MIN_BLOOM_PRESSURE = 2.0  # Minimum pressure for bloom stages
 
 
 def validate_pressure_range(pressure: float, stage_name: str) -> None:
@@ -17,6 +18,7 @@ def validate_pressure_range(pressure: float, stage_name: str) -> None:
         )
 
 
+from .exit_mode import convert_exit_triggers as exit_mode_convert
 from .models.gaggimate import (
     ExitTarget,
     GaggimatePhase,
@@ -25,6 +27,30 @@ from .models.gaggimate import (
     TransitionSettings,
 )
 from .models.meticulous import ExitTrigger, MeticulousProfile
+
+# Transition mode constants for smart interpolation mapping
+TRANSITION_MODE_SMART = "smart"
+TRANSITION_MODE_PRESERVE = "preserve"
+TRANSITION_MODE_LINEAR = "linear"
+TRANSITION_MODE_INSTANT = "instant"
+
+# Interpolation mapping for smart mode
+SMART_INTERPOLATION_MAP = {
+    "linear": "linear",
+    "step": "linear",
+    "instant": "instant",
+    "bezier": "ease-in-out",
+    "spline": "ease-in-out",
+}
+
+# Interpolation mapping for preserve mode (1:1 mapping)
+PRESERVE_INTERPOLATION_MAP = {
+    "linear": "linear",
+    "step": "linear",
+    "instant": "linear",
+    "bezier": "bezier",
+    "spline": "spline",
+}
 
 VAR_PATTERN = re.compile(r"\$(\w+)\b")
 
@@ -162,11 +188,31 @@ def find_unresolved_variables(data: dict[str, Any]) -> list[dict[str, str]]:
     return unresolved
 
 
-def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
+def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TRANSITION_MODE_SMART) -> tuple[dict[str, Any], list[str]]:
     """
     Translates a Meticulous profile to Gaggimate format.
+
+    Args:
+        meticulous_data: The Meticulous profile data to translate
+        transition_mode: Interpolation mapping mode - smart, preserve, linear, or instant
+
+    Returns:
+        Tuple of (gaggimate_data dict, warnings list)
     """
     from .exceptions import UndefinedVariableError
+
+    # Select interpolation map based on transition mode
+    if transition_mode == TRANSITION_MODE_PRESERVE:
+        interpolation_map = PRESERVE_INTERPOLATION_MAP
+    elif transition_mode == TRANSITION_MODE_LINEAR:
+        interpolation_map = {k: "linear" for k in ["linear", "step", "instant", "bezier", "spline"]}
+    elif transition_mode == TRANSITION_MODE_INSTANT:
+        interpolation_map = {k: "instant" for k in ["linear", "step", "instant", "bezier", "spline"]}
+    else:  # Default to smart mode
+        interpolation_map = SMART_INTERPOLATION_MAP
+
+    # Collect all translation warnings
+    translation_warnings: list[str] = []
 
     # Resolve variable references ($var_name) to concrete values
     meticulous_data = resolve_variables(meticulous_data)
@@ -181,21 +227,6 @@ def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
     # Load input into MeticulousProfile model
     meticulous = MeticulousProfile(**meticulous_data)
 
-    def convert_exit_triggers(triggers: list[ExitTrigger]) -> list[ExitTarget]:
-        """Helper to convert Meticulous exit triggers to Gaggimate exit targets."""
-        targets: list[ExitTarget] = []
-        op_map = {">=": "gte", "<=": "lte", ">": "gt", "<": "lt"}
-        type_map = {"weight": "volumetric", "time": "time", "pressure": "pressure"}
-
-        for trigger in triggers:
-            g_target = ExitTarget(
-                type=type_map.get(trigger.type, trigger.type),
-                operator=op_map.get(trigger.comparison, "gte"),
-                value=trigger.value,
-            )
-            targets.append(g_target)
-        return targets
-
     # Preserve metadata (TRAN-10)
     # Include author and id in the description
     description = (
@@ -205,19 +236,34 @@ def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
     )
 
     phases: list[GaggimatePhase] = []
+    cumulative_time: float = 0.0  # Track cumulative time for relative trigger conversion
 
     # Mapping for Meticulous stage keys to Gaggimate phase types (Task 2)
-    phase_type_map = {"Fill": "preinfusion", "Bloom": "preinfusion", "Extraction": "brew"}
+    # Case-insensitive matching for real-world Meticulous profiles
+    phase_type_map = {
+        "fill": "preinfusion",
+        "bloom": "preinfusion",
+        "blooming": "preinfusion",
+        "extraction": "brew",
+    }
 
     for stage in meticulous.stages:
         num_points = len(stage.dynamics.points)
+        stage_start_time = cumulative_time  # Capture start time for this stage's triggers
 
         if num_points <= 1:
             # Single point stage logic
             target_value = stage.dynamics.points[0][1] if num_points == 1 else 0.0
 
             # Map stage type to pump target
-            if stage.type == "power":
+            # Special case: Bloom stages use pressure with zero flow (bloom hold behavior)
+            if stage.key.lower() in ("bloom", "blooming"):
+                pump = PumpSettings(
+                    target="pressure",
+                    pressure=max(target_value, MIN_BLOOM_PRESSURE),
+                    flow=0.0,
+                )
+            elif stage.type == "power":
                 pump = PumpSettings(
                     target="pressure",
                     pressure=target_value / 10.0,
@@ -242,26 +288,61 @@ def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
                     f"Unknown stage type: {stage.type}. Expected 'power', 'flow', or 'pressure'."
                 )
 
-            duration = 30.0
+            # Duration calculation logic:
+            # Use exit trigger if present, else:
+            # For pressure or flow, use difference from dynamics (pressure delta => fast, flow delta => standard); fallback 30.0
+            duration = None
             for trigger in stage.exit_triggers:
                 if trigger.type == "time":
                     duration = trigger.value
                     break
 
+            if duration is None:
+                if stage.type == "pressure":
+                    if num_points == 1 and len(stage.dynamics.points[0]) >= 2:
+                        # Use fast shot algorithm: delta > 3.0 => 1.5s, else 4.0s
+                        p1 = stage.dynamics.points[0][1]
+                        p0 = 0.0
+                        delta = abs(p1 - p0)
+                        duration = 1.5 if delta > 3.0 else 4.0
+                    else:
+                        duration = 4.0
+                elif stage.type == "flow":
+                    # Default flow stage, fallback 4.0s
+                    duration = 4.0
+                else:
+                    duration = 30.0
+
             if duration <= 0:
                 duration = 0.1
 
-            targets = convert_exit_triggers(stage.exit_triggers)
+            targets, exit_warnings = exit_mode_convert(stage.exit_triggers, phase_start_time=stage_start_time)
+            translation_warnings.extend(exit_warnings)
+            # Emit warnings for test compatibility
+            import warnings as py_warnings
+            for warning in exit_warnings:
+                py_warnings.warn(warning)
+
+            cumulative_time += duration  # Update cumulative time for next stage
+
+            # Transition assignment: always force instant for flow, otherwise use mapping
+            # For single-point: force 'instant' for all types except 'pressure'; else use mapping
+            if stage.type != "pressure":
+                transition_type = "instant"
+                transition_duration = 0.0
+            else:
+                transition_type = interpolation_map.get(stage.dynamics.interpolation, "linear")
+                transition_duration = duration if transition_type == "linear" else 0.0
 
             phase = GaggimatePhase(
                 name=stage.name,
-                phase=phase_type_map.get(stage.key, stage.key),
+                phase=phase_type_map.get(stage.key.lower(), stage.key),
                 valve=1,
                 duration=duration,
                 temperature=meticulous.temperature,
                 transition=TransitionSettings(
-                    type="instant",
-                    duration=0.0,
+                    type=transition_type,
+                    duration=transition_duration,
                     adaptive=False,
                 ),
                 pump=pump,
@@ -281,7 +362,14 @@ def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
 
                 target_value = p_curr[1]
 
-                if stage.type == "power":
+                # Special case: Bloom stages use pressure with zero flow
+                if stage.key.lower() in ("bloom", "blooming"):
+                    pump = PumpSettings(
+                        target="pressure",
+                        pressure=max(target_value, MIN_BLOOM_PRESSURE),
+                        flow=0.0,
+                    )
+                elif stage.type == "power":
                     pump = PumpSettings(
                         target="pressure",
                         pressure=target_value / 10.0,
@@ -306,10 +394,12 @@ def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
                         f"Unknown stage type: {stage.type}. Expected 'power', 'flow', or 'pressure'."
                     )
 
-                # Transition type mapping (Task 2)
-                transition_type = (
-                    "linear" if stage.dynamics.interpolation == "linear" else "instant"
-                )
+                # Transition type mapping based on selected mode
+                # Always force instant for flow, else use mapping
+                if stage.type == "flow":
+                    transition_type = "instant"
+                else:
+                    transition_type = interpolation_map.get(stage.dynamics.interpolation, "linear")
 
                 # Linear transition for split segments (Task 2)
                 transition = TransitionSettings(
@@ -321,11 +411,18 @@ def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
                 # Only add exit triggers to the final phase of a split stage
                 targets = []
                 if i == num_points - 1:  # Final segment
-                    targets = convert_exit_triggers(stage.exit_triggers)
+                    targets, exit_warnings = exit_mode_convert(stage.exit_triggers, phase_start_time=stage_start_time)
+                    translation_warnings.extend(exit_warnings)
+                    # Emit warnings for test compatibility
+                    import warnings as py_warnings
+                    for warning in exit_warnings:
+                        py_warnings.warn(warning)
+
+                cumulative_time += phase_duration  # Update cumulative time for next segment
 
                 phase = GaggimatePhase(
                     name=f"{stage.name} ({i}/{num_points - 1})",
-                    phase=phase_type_map.get(stage.key, stage.key),
+                phase=phase_type_map.get(stage.key.lower(), stage.key),
                     valve=1,
                     duration=phase_duration,
                     temperature=meticulous.temperature,
@@ -344,4 +441,4 @@ def translate_profile(meticulous_data: dict[str, Any]) -> dict[str, Any]:
         phases=phases,
     )
 
-    return gaggimate.model_dump()
+    return gaggimate.model_dump(), translation_warnings

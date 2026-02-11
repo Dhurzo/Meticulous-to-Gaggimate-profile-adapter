@@ -30,7 +30,7 @@ def test_power_0_percent():
         "stages": [create_power_stage("0% Power", 0.0)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     assert phase["pump"]["target"] == "pressure"
@@ -52,7 +52,7 @@ def test_power_10_percent():
         "stages": [create_power_stage("10% Power", 10.0)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     assert phase["pump"]["target"] == "pressure"
@@ -74,7 +74,7 @@ def test_power_50_percent():
         "stages": [create_power_stage("50% Power", 50.0)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     assert phase["pump"]["target"] == "pressure"
@@ -96,7 +96,7 @@ def test_power_100_percent():
         "stages": [create_power_stage("100% Power", 100.0)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     assert phase["pump"]["target"] == "pressure"
@@ -127,7 +127,7 @@ def test_power_to_pressure_conversion(power_value: float, expected_pressure: flo
         "stages": [create_power_stage("Test", power_value)],
     }
 
-    result = translate_profile(profile_data)
+    result, _ = translate_profile(profile_data)
     phase = result["phases"][0]
 
     assert phase["pump"]["target"] == "pressure"
@@ -166,8 +166,8 @@ def test_power_vs_pressure_distinction():
     # Helper import
     from translate_profile.translator import translate_profile
 
-    power_result = translate_profile(power_profile)
-    pressure_result = translate_profile(pressure_profile)
+    power_result, _ = translate_profile(power_profile)
+    pressure_result, _ = translate_profile(pressure_profile)
 
     # Both should have same numerical pressure (5.0 bar)
     power_phase = power_result["phases"][0]

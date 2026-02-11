@@ -88,7 +88,7 @@ def translate(
 
         # Call the translation engine
         try:
-            gaggimate_data = translate_profile(meticulous_data)
+            gaggimate_data, translation_warnings = translate_profile(meticulous_data)
         except ValidationError as e:
             # Human-readable Pydantic errors
             error_details = []
@@ -105,6 +105,12 @@ def translate(
         # Write output
         output_path = write_gaggimate_json(gaggimate_data, output_filename)
         typer.echo(f"Successfully wrote: {output_path}")
+
+        # Display translation warnings if any
+        if translation_warnings:
+            typer.echo("\n⚠️  Translation Warnings:")
+            for warning in translation_warnings:
+                typer.echo(f"  {warning}")
 
     except FileNotFoundTranslationError as e:
         typer.echo(f"Error: {e.message}", err=True)

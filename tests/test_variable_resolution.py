@@ -240,7 +240,7 @@ def test_ultra_low_contact_translation():
     with open(profile_path) as f:
         profile = json.load(f)
 
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     assert result is not None
     assert "label" in result
     assert "phases" in result

@@ -165,9 +165,10 @@ def convert_exit_triggers(
         seen_types[trigger.type] = (trigger.comparison, trigger.value)
 
         # Calculate value for time triggers with relative flag
-        value = trigger.value
+        calculated_value = trigger.value
         if trigger.type == "time" and trigger.relative:
-            value = phase_start_time + trigger.value
+            calculated_value = float(phase_start_time) + float(trigger.value)
+        value = calculated_value
 
         # Create ExitTarget
         target_type = TRIGGER_TO_TARGET_TYPE.get(trigger.type, trigger.type)

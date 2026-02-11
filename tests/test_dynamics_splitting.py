@@ -31,7 +31,7 @@ def test_dynamics_splitting():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     phases = result["phases"]
 
     assert len(phases) == 2
@@ -77,7 +77,7 @@ def test_instant_interpolation_splitting():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     phases = result["phases"]
 
     assert len(phases) == 1
@@ -109,7 +109,7 @@ def test_single_point_stage():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     phases = result["phases"]
 
     assert len(phases) == 1
@@ -149,7 +149,7 @@ def test_phase_mapping():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     phases = result["phases"]
 
     assert phases[0]["phase"] == "preinfusion"
@@ -186,7 +186,7 @@ def test_multi_point_with_exit_triggers():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     phases = result["phases"]
 
     # Should create 2 phases from 3 points

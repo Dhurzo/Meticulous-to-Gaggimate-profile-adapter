@@ -83,6 +83,146 @@ translate-batch .
 
 This section documents how Meticulous profiles are converted to Gaggimate format.
 
+## Quick Reference
+
+### Exit Trigger Type Mapping
+
+| Meticulous Syntax | Gaggimate Syntax | Conversion |
+|-------------------|------------------|------------|
+| `{"exit": {"type": "weight", "value": 36.0}}` | `{"exit_target": {"type": "volumetric", "value": 36.0}}` | Weight → Volumetric (type renamed) |
+| `{"exit": {"type": "time", "value": 30}}` | `{"exit_target": {"type": "time", "value": 30}}` | Time → Time (direct passthrough) |
+| `{"exit": {"type": "pressure", "value": 9.0}}` | `{"exit_target": {"type": "pressure", "value": 9.0}}` | Pressure → Pressure (direct passthrough) |
+| `{"exit": {"type": "flow", "value": 2.5}}` | `{"exit_target": {"type": "flow", "value": 2.5}}` | Flow → Flow (direct passthrough) |
+
+### Operator Translation
+
+| Meticulous | Gaggimate | Meaning |
+|------------|-----------|---------|
+| `>=` | `gte` | Greater than or equal |
+| `<=` | `lte` | Less than or equal |
+| `>` | `gt` | Greater than |
+| `<` | `lt` | Less than |
+
+**Default:** When no operator is specified, defaults to `gte` (greater than or equal).
+
+---
+
+## Exit Triggers
+
+Meticulous exit triggers define when a phase ends. Each trigger specifies a condition (type, value, operator) that, when met, signals the transition to the next phase.
+
+### Weight-Based Triggers
+
+Weight-based triggers in Meticulous use grams for shot weight measurement. Gaggimate uses milliliters for volumetric targets.
+
+**Translation:** Trigger type renames from "weight" to "volumetric", value remains unchanged.
+
+Meticulous: {"exit": {"type": "weight", "value": 36.0}}
+Gaggimate:  {"exit_target": {"type": "volumetric", "value": 36.0}}
+
+### Direct Passthrough Triggers
+
+Time, pressure, and flow triggers use direct value passthrough:
+
+| Trigger Type | Meticulous Field | Gaggimate Field | Notes |
+|--------------|------------------|-----------------|-------|
+| Time | `value: seconds` | `value: seconds` | Direct passthrough |
+| Pressure | `value: bar` | `value: bar` | Direct passthrough |
+| Flow | `value: ml_per_sec` | `value: ml_per_sec` | Direct passthrough |
+
+---
+
+## Operator Translation
+
+Meticulous comparison operators normalize to Gaggimate equivalents:
+
+```
+Meticulous: {"exit": {"type": "time", "value": 30, "operator": ">="}}
+Gaggimate:  {"exit_target": {"type": "time", "operator": "gte", "value": 30}}
+```
+
+| Meticulous Operator | Gaggimate Operator | Semantic Meaning |
+|-------------------|-------------------|------------------|
+| `>=` | `gte` | Greater than or equal (default) |
+| `<=` | `lte` | Less than or equal |
+| `>` | `gt` | Greater than |
+| `<` | `lt` | Less than |
+
+---
+
+## Relative Trigger Conversion
+
+Meticulous supports relative exit triggers using `+value` syntax, meaning "X seconds after the previous phase ends."
+
+### Accumulation Algorithm
+
+Relative triggers accumulate across phases to calculate absolute timestamps:
+
+```
+Phase 1: 0-30s (absolute time, no "+" prefix)
+Phase 2: +12.0 → 42s absolute (30 + 12)
+Phase 3: +8.0  → 50s absolute (42 + 8)
+```
+
+### Example Conversion
+
+```
+Meticulous Input:
+Phase 1: exit at 30s (absolute)
+Phase 2: exit at +12.0 (relative)
+Phase 3: exit at +8.0  (relative)
+
+Gaggimate Output:
+Phase 1: exit_target at 30s
+Phase 2: exit_target at 42s
+Phase 3: exit_target at 50s
+```
+
+### Error Condition
+
+**Error:** Relative trigger on first phase (no prior phase to accumulate from)
+
+```
+Cannot use relative trigger on first phase
+```
+
+---
+
+## Warning Categories
+
+The translator emits warnings to help users understand translation quality:
+
+### [Validation] Warnings
+
+Conditions detected that may affect translation quality:
+
+| Condition | Example | User Guidance |
+|-----------|---------|---------------|
+| Conflicting triggers | `weight >= 36 AND weight <= 30` | Review phase exit conditions |
+| Duplicate triggers | Same trigger type twice | First trigger takes precedence |
+| Density assumption | Weight trigger on unusual roast | May need manual adjustment |
+
+**Example:**
+```
+[Validation] Conflicting weight triggers: weight >= 36 AND weight <= 30 - conditions can never both be true
+```
+
+### [Unsupported] Notices
+
+Meticulous features without Gaggimate equivalent:
+
+| Feature | Example | User Guidance |
+|---------|---------|---------------|
+| Unsupported trigger type | `piston_position`, `power`, `user_interaction` | Trigger will be ignored |
+| Deprecated operator | Legacy operator syntax | Converted to modern equivalent |
+
+**Example:**
+```
+[Unsupported] piston_position exit trigger is not supported by Gaggimate machines. This trigger will be ignored.
+```
+
+---
+
 ## Schema Overview
 
 ### Meticulous Format (Stages-Based)
@@ -134,8 +274,6 @@ Gaggimate uses a **phases-based** structure:
 }
 ```
 
----
-
 ## Field Mappings
 
 ### Stage Type Mapping
@@ -150,7 +288,7 @@ Gaggimate uses a **phases-based** structure:
 ### Power-to-Pressure Conversion
 
 Meticulous uses **0-100** scale for power.
-Gaggimate uses **0-15 bars** for pressure.
+Gaggimate uses **0-10 bars** for pressure.
 
 ```python
 # Conversion formula
@@ -181,6 +319,9 @@ Example: 3-point dynamics creates 2 phases.
 | weight | volumetric |
 | time | time |
 | pressure | pressure |
+| flow | flow |
+
+**See also:** [Exit Triggers](#exit-triggers) section for detailed syntax mapping examples.
 
 | Meticulous Operator | Gaggimate Operator |
 |-------------------|-------------------|
@@ -189,13 +330,51 @@ Example: 3-point dynamics creates 2 phases.
 | > | gt |
 | < | lt |
 
+**See also:** [Operator Translation](#operator-translation) section for detailed syntax mapping and examples.
+
 ### Interpolation Mapping
+
+The translator applies different interpolation mappings based on the selected transition mode.
+
+#### Smart Mode (Default)
 
 | Meticulous Interpolation | Gaggimate Transition |
 |------------------------|-------------------|
 | linear | linear |
-| step/instant | instant |
-| other | instant |
+| step | linear |
+| instant | instant |
+| bezier | ease-in-out |
+| spline | ease-in-out |
+
+#### Preserve Mode
+
+| Meticulous Interpolation | Gaggimate Transition |
+|------------------------|-------------------|
+| linear | linear |
+| step | linear |
+| instant | linear |
+| bezier | bezier |
+| spline | spline |
+
+#### Linear Mode (force linear)
+
+| Meticulous Interpolation | Gaggimate Transition |
+|------------------------|-------------------|
+| linear | linear |
+| step | linear |
+| instant | linear |
+| bezier | linear |
+| spline | linear |
+
+#### Instant Mode (force instant)
+
+| Meticulous Interpolation | Gaggimate Transition |
+|------------------------|-------------------|
+| linear | instant |
+| step | instant |
+| instant | instant |
+| bezier | instant |
+| spline | instant |
 
 ### Metadata Preservation
 
@@ -210,16 +389,145 @@ Example: 3-point dynamics creates 2 phases.
 
 ## Validation Rules
 
-The translator enforces Gaggimate firmware constraints:
+The translator enforces Gaggimate firmware constraints and emits warnings for translation quality issues:
 
 | Constraint | Range | Notes |
 |------------|-------|-------|
 | Temperature | 0-150°C | Per-phase and profile-level |
-| Pressure | 0-15 bars | PumpSettings.pressure |
+| Pressure | 0-10 bars | PumpSettings.pressure (with bloom stages floored to 2.0 bar) |
 | Flow | ≥ 0 | PumpSettings.flow |
 | Duration | > 0 seconds | Phase duration |
 
+**See also:** [Warning Categories](#warning-categories) section for detailed warning types and user guidance.
+
 ---
+## Examples
+
+This section provides concrete examples demonstrating how Meticulous profiles translate to Gaggimate format. Each example uses real profiles from the test suite that you can run yourself.
+
+---
+
+### Transition Mode Comparison Example
+
+
+**Interpolation Type Effects:**
+
+| Interpolation Type | Meticulous Syntax | Gaggimate Transition | Behavior |
+|--------------------|-------------------|----------------------|----------|
+| Linear | `interpolation: "linear"` | `type: "linear"` | Gradual transition between points |
+| Instant | `interpolation: "instant"` | `type: "instant"` | Immediate jump to next point |
+| Step | `interpolation: "step"` | `type: "linear"` | Simplified to linear |
+| Bezier | `interpolation: "bezier"` | `type: "ease-in-out"` | Smooth acceleration/deceleration |
+| Spline | `interpolation: "spline"` | `type: "ease-in-out"` | Smooth curve preservation |
+
+**Multi-Point Dynamics Behavior:**
+
+When a Meticulous stage has multiple dynamics points, the translator splits it into separate phases:
+
+```
+Input: 3 points → Output: 2 phases (point[0]→point[1], point[1]→point[2])
+- Phase 1: Flow Stage (1/2) - duration: 5s, flow: 4.0 ml/s
+- Phase 2: Flow Stage (2/2) - duration: 10s, flow: 2.0 ml/s, exit trigger: 25s
+```
+
+**When to Use Each Interpolation Type:**
+- **Linear:** Standard pressure/flow ramps (most common)
+- **Instant:** Quick pressure jumps or pre-infusion
+- **Step:** Simplified instant transitions
+- **Bezier:** Smooth pressure profiling for nuanced extraction
+- **Spline:** Complex flow curves requiring natural curves
+
+**Run this example:**
+```bash
+translate-profile translate tests/fixtures/batch_test_data/valid_profiles/profile2.json --output flow_profile_gaggimate.json
+```
+
+See also: [Dynamics Point Splitting](#dynamics-point-splitting) and [Interpolation Mapping](#interpolation-mapping).
+
+---
+
+### Warning Interpretation Example
+
+This example demonstrates how to interpret translator warnings and resolve issues in your Meticulous profiles.
+
+**Input (Meticulous JSON with issues):**
+```json
+{
+    "name": "Profile with Issues",
+    "id": "warning-test-1",
+    "author": "test",
+    "author_id": "test",
+    "temperature": 93.0,
+    "final_weight": 36.0,
+    "stages": [
+        {
+            "name": "Test Stage",
+            "key": "test",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 50], [10, 90]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "weight", "value": 36.0, "comparison": ">="},
+                {"type": "weight", "value": 30.0, "comparison": "<="},
+                {"type": "piston_position", "value": 50, "comparison": ">="}
+            ]
+        }
+    ]
+}
+```
+
+**Warning Output:**
+```
+[Validation] Conflicting weight triggers: weight >= 36.0 AND weight <= 30.0 - conditions can never both be true. Only the first trigger will be used.
+[Unsupported] piston_position exit trigger is not supported by Gaggimate machines. This trigger will be ignored.
+[Validation] Duplicate weight trigger: weight <= 30.0 (already have weight >= 36.0). Only the first trigger will be used.
+```
+
+**Warning Interpretation:**
+
+| Warning | Category | Meaning | Resolution |
+|---------|----------|---------|------------|
+| "Conflicting weight triggers" | [Validation] | Two triggers with impossible conditions | Remove one trigger or adjust values |
+| "Duplicate weight trigger" | [Validation] | Same trigger type specified twice | Remove duplicate, keep desired trigger |
+| "piston_position not supported" | [Unsupported] | Trigger type has no Gaggimate equivalent | Remove unsupported trigger or accept it will be ignored |
+
+**Explanation:**
+
+1. **Conflicting Weight Triggers:** The profile specifies both `weight >= 36.0` AND `weight <= 30.0`. Since a shot can't simultaneously weigh more than 36g AND less than 30g, the second trigger can never fire. The translator keeps the first trigger and warns about the conflict.
+
+2. **Duplicate Trigger Warning:** This is a consequence of the conflicting triggers - after the first weight trigger is processed, the second one becomes a duplicate.
+
+3. **Unsupported Trigger Type:** `piston_position` is not a valid exit trigger type for Gaggimate machines. The translator ignores this trigger entirely and continues processing.
+
+**Corrected Profile (no warnings):**
+```json
+{
+    "name": "Profile with Issues - Fixed",
+    "id": "warning-test-1",
+    "author": "test",
+    "author_id": "test",
+    "temperature": 93.0,
+    "final_weight": 36.0,
+    "stages": [
+        {
+            "name": "Test Stage",
+            "key": "test",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 50], [10, 90]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "weight", "value": 36.0, "comparison": ">="}
+            ]
+        }
+    ]
+}
+```
 
 ## Lost Values & Unsupported Features
 
@@ -264,6 +572,8 @@ The `previous_authors` array is read but not included in output.
 Meticulous supports `relative: true` for exit triggers.
 This is converted to absolute values during translation.
 
+**See also:** [Relative Trigger Conversion](#relative-trigger-conversion) section for detailed algorithm and examples.
+
 ### Conditional Logic (NOT SUPPORTED)
 
 Meticulous supports conditional logic that cannot be represented in Gaggimate:
@@ -275,12 +585,13 @@ Meticulous supports conditional logic that cannot be represented in Gaggimate:
 
 ### Interpolation Types Other Than Linear (SIMPLIFIED)
 
-| Meticulous Type | Result |
-|----------------|--------|
-| linear | Linear transition ✓ |
-| step | Instant transition |
-| bezier/spline | Instant transition |
-| other | Instant transition |
+The translator handles non-linear interpolations according to the active transition mode:
+
+- **Smart (default):** linear → linear, step → linear, instant → instant, bezier/spline → ease-in-out
+- **Preserve:** retains bezier/spline while immediately dropping instant to linear
+- **Linear / Instant:** force every interpolation to the requested transition type
+
+See [Interpolation Mapping](#interpolation-mapping) for the full tables that pair interpolation types with output transition types based on the configured mode.
 
 ---
 
@@ -294,6 +605,26 @@ Original Stage: "Preinfusion" with 3 points
 Phase 1: "Preinfusion (1/2)"
 Phase 2: "Preinfusion (2/2)"
 ```
+
+Single-point stages emit exactly one phase and always use instant transitions to match the original rigidity.
+
+### Flow Stage Transition Rule
+
+Flow-type stages (any stage with `type: "flow"` or similarly labeled keys) always get `transition.type = "instant"`, even if the interpolation is linear, bezier, or spline. This guarantees the rapid adjustments that flow profiles expect and avoids the smoothing effects other transition types would introduce.
+
+### Bloom Phase Semantics
+
+Bloom stages (identified by keys like `"bloom"`/`"blooming"`) are treated like pressure stages with a hard floor of 2.0 bar and zero reported flow to emulate bloom hold behavior. They still emit instant transitions and use the pressure pump target even when their original stage type was `flow`.
+
+### Duration Heuristics
+
+When a stage lacks a time-based exit trigger, durations are inferred:
+
+- Pressure stages calculate durations from the pressure delta (`points[-1][1] - 0.0`). Deltas greater than 3.0 bar become short bursts (`1.5s`); otherwise, they default to `4.0s`.
+- Flow or other stages default to `4.0s` unless a trigger provides an explicit value.
+- Any computed duration below or equal to 0 is clamped to `0.1s` to avoid invalid outputs.
+
+Split stages compute each segments duration as the difference between successive dynamic points, ensuring the Gaggimate phases align with the original curve. Only the final segment carries exit targets; preceding segments are purely for pump target/profile shaping.
 
 ---
 

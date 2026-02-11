@@ -65,7 +65,7 @@ def process_batch(files: list[Path], output_dir: Path = DEFAULT_OUTPUT_DIR) -> B
             meticulous_data = read_meticulous_json(file_path)
 
             # Translate to Gaggimate format
-            gaggimate_data = translate_profile(meticulous_data)
+            gaggimate_data, _ = translate_profile(meticulous_data)
 
             # Write Gaggimate JSON to output directory
             output_path = write_gaggimate_json(gaggimate_data, file_path.name, output_dir)

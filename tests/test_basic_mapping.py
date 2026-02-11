@@ -23,7 +23,7 @@ def test_metadata_preservation():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
 
     assert result["label"] == "Test Profile"
     assert "John Doe" in result["description"]
@@ -52,7 +52,7 @@ def test_power_to_pressure_scaling():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     pump = result["phases"][0]["pump"]
     assert pump["target"] == "pressure"
     assert pump["pressure"] == 10.0
@@ -77,7 +77,7 @@ def test_flow_to_flow_mapping():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     pump = result["phases"][0]["pump"]
     assert pump["target"] == "flow"
     assert pump["flow"] == 2.5
@@ -106,7 +106,7 @@ def test_exit_triggers_and_operators():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     targets = result["phases"][0]["targets"]
 
     assert len(targets) == 3
@@ -145,5 +145,5 @@ def test_duration_from_trigger():
         ],
     }
 
-    result = translate_profile(meticulous_data)
+    result, _ = translate_profile(meticulous_data)
     assert result["phases"][0]["duration"] == 15.5

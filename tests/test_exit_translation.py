@@ -42,7 +42,7 @@ def test_weight_to_volumetric():
     profile = make_profile_with_triggers([
         {'type': 'weight', 'value': 36, 'relative': False, 'comparison': '>='}
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     assert len(targets) == 1
@@ -57,7 +57,7 @@ def test_time_to_time():
     profile = make_profile_with_triggers([
         {'type': 'time', 'value': 25, 'relative': False, 'comparison': '>='}
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     assert len(targets) == 1
@@ -72,7 +72,7 @@ def test_pressure_to_pressure():
     profile = make_profile_with_triggers([
         {'type': 'pressure', 'value': 9, 'relative': False, 'comparison': '>='}
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     assert len(targets) == 1
@@ -87,7 +87,7 @@ def test_flow_to_flow():
     profile = make_profile_with_triggers([
         {'type': 'flow', 'value': 2, 'relative': False, 'comparison': '>='}
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     assert len(targets) == 1
@@ -108,7 +108,7 @@ def test_operator_mapping(meticulous_op, gaggimate_op):
     profile = make_profile_with_triggers([
         {'type': 'weight', 'value': 36, 'relative': False, 'comparison': meticulous_op}
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     assert len(targets) == 1
@@ -137,7 +137,7 @@ def test_relative_time_conversion():
             ],
         }],
     }
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     # The target should be on the second (final) segment
     targets = result['phases'][0]['targets']
     
@@ -155,7 +155,7 @@ def test_multiple_trigger_types():
         {'type': 'pressure', 'value': 9, 'relative': False, 'comparison': '>='},
         {'type': 'flow', 'value': 2, 'relative': False, 'comparison': '>='},
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     assert len(targets) == 4
@@ -184,7 +184,7 @@ def test_duplicate_trigger_deduplication():
         {'type': 'weight', 'value': 36, 'relative': False, 'comparison': '>='},
         {'type': 'weight', 'value': 30, 'relative': False, 'comparison': '>='},  # Duplicate
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     # Should only have 1 target (first weight trigger kept, duplicate skipped)
@@ -220,7 +220,7 @@ def test_mixed_supported_and_unsupported_types():
     ])
     
     with pytest.warns(UserWarning, match=r'\[Unsupported\].*piston_position.*not supported'):
-        result = translate_profile(profile)
+        result, _ = translate_profile(profile)
     
     targets = result['phases'][0]['targets']
     # Should have 2 targets (weight and time)
@@ -237,7 +237,7 @@ def test_absolute_time_preserved():
     profile = make_profile_with_triggers([
         {'type': 'time', 'value': 30, 'relative': False, 'comparison': '>='}
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     assert len(targets) == 1
@@ -260,7 +260,7 @@ def test_all_operators_with_all_types(trigger_type, trigger_value):
         {'type': trigger_type, 'value': trigger_value, 'relative': False, 'comparison': '>'},
         {'type': trigger_type, 'value': trigger_value, 'relative': False, 'comparison': '<'},
     ])
-    result = translate_profile(profile)
+    result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
     # Due to deduplication, only first trigger of each type should be kept

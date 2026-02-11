@@ -42,31 +42,31 @@ class TestSmartMode:
     def test_smart_mode_linear_interpolation(self):
         """Verify linear interpolation maps to linear transition."""
         profile = create_test_profile("linear")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
     def test_smart_mode_step_interpolation(self):
         """Verify step interpolation maps to linear transition."""
         profile = create_test_profile("step")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
     def test_smart_mode_instant_interpolation(self):
         """Verify instant interpolation maps to instant transition."""
         profile = create_test_profile("instant")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["transition"]["type"] == "instant"
 
     def test_smart_mode_bezier_interpolation(self):
         """Verify bezier interpolation maps to ease-in-out transition."""
         profile = create_test_profile("bezier")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["transition"]["type"] == "ease-in-out"
 
     def test_smart_mode_spline_interpolation(self):
         """Verify spline interpolation maps to ease-in-out transition."""
         profile = create_test_profile("spline")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["transition"]["type"] == "ease-in-out"
 
 
@@ -76,31 +76,31 @@ class TestPreserveMode:
     def test_preserve_mode_linear_interpolation(self):
         """Verify linear interpolation maps to linear transition."""
         profile = create_test_profile("linear")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
     def test_preserve_mode_step_interpolation(self):
         """Verify step interpolation maps to linear transition."""
         profile = create_test_profile("step")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
     def test_preserve_mode_instant_interpolation(self):
         """Verify instant interpolation maps to linear transition (not instant)."""
         profile = create_test_profile("instant")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
     def test_preserve_mode_bezier_interpolation(self):
         """Verify bezier interpolation is preserved as bezier."""
         profile = create_test_profile("bezier")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
         assert result["phases"][0]["transition"]["type"] == "bezier"
 
     def test_preserve_mode_spline_interpolation(self):
         """Verify spline interpolation is preserved as spline."""
         profile = create_test_profile("spline")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
         assert result["phases"][0]["transition"]["type"] == "spline"
 
 
@@ -110,19 +110,19 @@ class TestLinearMode:
     def test_linear_mode_forces_linear_for_linear(self):
         """Verify linear mode forces linear for linear interpolation."""
         profile = create_test_profile("linear")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_LINEAR)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_LINEAR)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
     def test_linear_mode_forces_linear_for_bezier(self):
         """Verify linear mode forces linear for bezier interpolation."""
         profile = create_test_profile("bezier")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_LINEAR)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_LINEAR)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
     def test_linear_mode_forces_linear_for_instant(self):
         """Verify linear mode forces linear for instant interpolation."""
         profile = create_test_profile("instant")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_LINEAR)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_LINEAR)
         assert result["phases"][0]["transition"]["type"] == "linear"
 
 
@@ -132,19 +132,19 @@ class TestInstantMode:
     def test_instant_mode_forces_instant_for_linear(self):
         """Verify instant mode forces instant for linear interpolation."""
         profile = create_test_profile("linear")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_INSTANT)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_INSTANT)
         assert result["phases"][0]["transition"]["type"] == "instant"
 
     def test_instant_mode_forces_instant_for_bezier(self):
         """Verify instant mode forces instant for bezier interpolation."""
         profile = create_test_profile("bezier")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_INSTANT)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_INSTANT)
         assert result["phases"][0]["transition"]["type"] == "instant"
 
     def test_instant_mode_forces_instant_for_spline(self):
         """Verify instant mode forces instant for spline interpolation."""
         profile = create_test_profile("spline")
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_INSTANT)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_INSTANT)
         assert result["phases"][0]["transition"]["type"] == "instant"
 
 
@@ -174,7 +174,7 @@ class TestMultiPointDynamics:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Should have 2 phases from splitting the multi-point stage
         assert len(result["phases"]) == 2
         # Both should have ease-in-out transition
@@ -204,7 +204,7 @@ class TestMultiPointDynamics:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
         # Should have 2 phases from splitting
         assert len(result["phases"]) == 2
         # Both should preserve spline
@@ -238,7 +238,7 @@ class TestPhantomPhases:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Single-point stage should produce exactly 1 phase
         assert len(result["phases"]) == 1
 
@@ -265,7 +265,7 @@ class TestPhantomPhases:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # 3-point stage should produce exactly 2 phases
         assert len(result["phases"]) == 2
 
@@ -293,7 +293,7 @@ class TestPhantomPhases:
             ],
         }
         # Should not raise an exception
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Result should still have phases (using default behavior)
         assert "phases" in result
 
@@ -326,7 +326,7 @@ class TestDurationPreservation:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Duration should be 20.0 from exit trigger, NOT calculated from pressure delta
         assert result["phases"][0]["duration"] == 20.0
 
@@ -353,7 +353,7 @@ class TestDurationPreservation:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Without exit triggers, duration should be calculated from pressure delta
         # Without exit triggers, duration should be calculated from pressure delta
         # Pressure delta = |5.0 - 0.0| = 5.0, which is normal range → 4.0s duration
@@ -384,7 +384,7 @@ class TestDurationPreservation:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Pressure delta = |8.0 - 0.0| = 8.0, which is large (>3.0) → 1.5s duration
         duration = result["phases"][0]["duration"]
         assert duration == 1.5  # Large pressure delta = short duration
@@ -414,7 +414,7 @@ class TestDurationPreservation:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Flow stage with 20s time trigger should have duration = 20.0
         # NOT overwritten by pressure delta calculation (pressure delta is 0 for flow stages)
         assert result["phases"][0]["duration"] == 20.0
@@ -446,7 +446,7 @@ class TestFlowPumpMapping:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["pump"]["target"] == "flow"
 
     def test_pressure_stage_uses_pressure_target(self):
@@ -472,7 +472,7 @@ class TestFlowPumpMapping:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["pump"]["target"] == "pressure"
 
 
@@ -502,7 +502,7 @@ class TestBloomSemantics:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["pump"]["target"] == "pressure"
 
     def test_bloom_stage_zero_flow(self):
@@ -528,7 +528,7 @@ class TestBloomSemantics:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["pump"]["flow"] == 0
 
     def test_bloom_stage_uses_bloom_pressure(self):
@@ -556,7 +556,7 @@ class TestBloomSemantics:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         assert result["phases"][0]["pump"]["pressure"] == MIN_BLOOM_PRESSURE
 
     def test_non_bloom_flow_stage_uses_flow_target(self):
@@ -582,7 +582,7 @@ class TestBloomSemantics:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Should use flow target, not pressure
         assert result["phases"][0]["pump"]["target"] == "flow"
         assert result["phases"][0]["pump"]["flow"] == 3.0
@@ -610,7 +610,7 @@ class TestBloomSemantics:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Multi-point stage should produce 1 phase (from split)
         assert len(result["phases"]) == 1
         # The phase should use pressure target for bloom
@@ -645,7 +645,7 @@ class TestStageTypeTransitions:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Flow stage should use instant transition, not ease-in-out from bezier
         assert result["phases"][0]["transition"]["type"] == "instant"
 
@@ -674,7 +674,7 @@ class TestStageTypeTransitions:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Flow stage should use instant transition even with linear interpolation
         assert result["phases"][0]["transition"]["type"] == "instant"
 
@@ -703,7 +703,7 @@ class TestStageTypeTransitions:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Pressure stage should use ease-in-out from bezier mapping
         assert result["phases"][0]["transition"]["type"] == "ease-in-out"
 
@@ -730,7 +730,7 @@ class TestStageTypeTransitions:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
         # Multi-point stage should produce 2 phases (3 points - 1)
         assert len(result["phases"]) == 2
         # Both phases should use instant transition
@@ -762,7 +762,7 @@ class TestStageTypeTransitions:
                 }
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_PRESERVE)
         # Flow stage should use instant transition (stage type override)
         assert result["phases"][0]["transition"]["type"] == "instant"
 
@@ -822,7 +822,7 @@ class TestExDosIntegration:
                 },
             ],
         }
-        result = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
+        result, _ = translate_profile(profile, transition_mode=TRANSITION_MODE_SMART)
 
         # Verify correct number of phases (no phantom phases)
         # Preinfusion: 1 phase, Bloom: 1 phase, Ramp: 1 phase (2 points = 1 segment)
