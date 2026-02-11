@@ -1,0 +1,23 @@
+{
+    "name": "Another Valid Profile",
+    "id": "another-valid-1",
+    "author": "test_fixture",
+    "author_id": "test",
+    "temperature": 95.0,
+    "final_weight": 35.0,
+    "stages": [
+        {
+            "name": "Quick Extraction",
+            "key": "quick",
+            "type": "power",
+            "dynamics": {
+                "points": [[0, 95]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "time", "value": 20.0, "relative": true, "comparison": ">="}
+            ]
+        }
+    ]
+}

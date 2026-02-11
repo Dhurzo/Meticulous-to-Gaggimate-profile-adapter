@@ -1,0 +1,23 @@
+{
+    "name": "Flow Profile",
+    "id": "flow-1",
+    "author": "test_fixture",
+    "author_id": "test",
+    "temperature": 94.0,
+    "final_weight": 40.0,
+    "stages": [
+        {
+            "name": "Flow Stage",
+            "key": "flow_stage",
+            "type": "flow",
+            "dynamics": {
+                "points": [[0, 2], [5, 4], [15, 2]],
+                "over": "time",
+                "interpolation": "linear"
+            },
+            "exit_triggers": [
+                {"type": "time", "value": 25.0, "relative": true, "comparison": ">="}
+            ]
+        }
+    ]
+}
