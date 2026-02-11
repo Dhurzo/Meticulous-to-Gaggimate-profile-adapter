@@ -2,6 +2,10 @@
 
 **Status: Experimental**
 
+**IA is involved in the development and documentation.**
+
+This code was created for personal use (PoC/Research/Testing), but it is published in case someone wants to use or refine it.
+
 Convert espresso extraction profiles from **Meticulous** JSON format to **Gaggimate** JSON format.
 
 ## Purpose
