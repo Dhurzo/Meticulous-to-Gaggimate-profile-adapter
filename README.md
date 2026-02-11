@@ -69,17 +69,11 @@ translate-batch ./profiles/ -o ./output/  # Custom output directory
 
 ```bash
 # Translate the example profile
-translate-profile translate "Automatic Pro 18g [Step Down] vIT3_0_19.json"
+translate-profile translate "profile1.json"
 
 # Batch process all profiles in current directory
 translate-batch .
 ```
-
-### Example Profiles
-
-- `Ultra_Low_Contact.json` - Low contact time profile
-- `ExDos".json`
----
 
 # Technical Translation Guide
 
