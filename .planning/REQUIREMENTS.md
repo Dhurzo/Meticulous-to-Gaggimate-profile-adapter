@@ -9,13 +9,16 @@
 ## v2.4 Requirements
 
 ### CLI Mode Flag
-- [ ] **CLI-01**: `translate-profile translate` accepts `--mode`/`--transition-mode` (choices: smart, preserve, linear, instant) and forwards the selection into `translate_profile`.
-- [ ] **CLI-02**: `translate-profile translate-batch` exposes the same flag/choices so batch workflows share consistent behavior and still default to `smart` when the flag is omitted.
-- [ ] **CLI-03**: CLI output echoes the mode in use so users can confirm which translation path ran (default message should say “smart mode”).
+- [x] **CLI-01**: `translate-profile translate` accepts `--mode`/`--transition-mode` (choices: smart, preserve, linear, instant) and forwards the selection into `translate_profile`. (2026-02-12)
+- [x] **CLI-02**: `translate-profile translate-batch` exposes the same flag/choices so batch workflows share consistent behavior and still default to `smart` when the flag is omitted. (2026-02-12)
+- [x] **CLI-03**: CLI output echoes the mode in use so users can confirm which translation path ran (default message should say “smart mode”). (2026-02-12)
 
 ### Documentation
-- [ ] **DOC-01**: README quick-start includes a concrete example showing `translate-profile translate input.json --mode preserve` (or equivalent) and explains which file is produced.
-- [ ] **DOC-02**: README describes all available modes (smart, preserve, linear, instant), summarizes their visual impact (how interpolation mapping changes), and highlights that only the CLI argument changes the mode (translation logic unchanged).
+- [x] **DOC-01**: README quick-start includes a concrete example showing `translate-profile translate input.json --mode preserve` (or equivalent) and explains which file is produced. (2026-02-12)
+- [x] **DOC-02**: README describes all available modes (smart, preserve, linear, instant), summarizes their visual impact (how interpolation mapping changes), and highlights that only the CLI argument changes the mode (translation logic unchanged). (2026-02-12)
+
+### Testing
+- [x] **TEST-01**: Add CLI mode logging tests for `translate` and `translate-batch` so the console output clearly shows the active transition mode (2026-02-12)
 
 ## Out of Scope
 | Feature | Reason |
@@ -29,11 +32,12 @@
 ## Traceability
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | Phase 20 | Pending |
-| CLI-02 | Phase 20 | Pending |
-| CLI-03 | Phase 20 | Pending |
-| DOC-01 | Phase 21 | Pending |
-| DOC-02 | Phase 21 | Pending |
+| CLI-01 | Phase 20 | Complete |
+| CLI-02 | Phase 20 | Complete |
+| CLI-03 | Phase 20 | Complete |
+| DOC-01 | Phase 21 | Complete |
+| DOC-02 | Phase 21 | Complete |
+| TEST-01 | Phase 22 | Complete |
 
 **Coverage:**
 - v2.4 requirements: 5 total

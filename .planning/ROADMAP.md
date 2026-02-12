@@ -96,6 +96,28 @@ Plans:
 
 ---
 
+### 🧪 Phase 22: Mode Verification Tests
+
+**Goal:** Confirm the CLI emits `Translation mode:`/`Mode:` for every allowed mode via automated tests.
+
+**Target features:**
+- Automated pytest coverage for `translate` and `translate-batch` (smart default plus preserve/linear/instant overrides)
+- Assertions verifying the console output includes the expected mode lines before and after translation
+
+**Requirements mapped:** TEST-01
+
+**Success Criteria:**
+1. Pytests run without failure and inspect the mode logging text
+2. Tests cover both single-profile and batch CLI commands, including the default smart behavior
+3. Evidence recorded in `.planning/phases/22-mode-verification/22-01-SUMMARY.md`
+
+**Plans:** 1 plan
+
+Plans:
+- [x] 22-01-PLAN.md — Cover translate/translate-batch mode logging via pytest
+
+---
+
 _Phase 22+: Run `/gsd-new-milestone` to define next goals_
 
 ---
