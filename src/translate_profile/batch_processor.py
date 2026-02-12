@@ -47,7 +47,11 @@ def validate_and_discover_files(input_dir: Path) -> list[Path]:
     return json_files
 
 
-def process_batch(files: list[Path], output_dir: Path = DEFAULT_OUTPUT_DIR) -> BatchResult:
+def process_batch(
+    files: list[Path],
+    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    transition_mode: str = "smart",
+) -> BatchResult:
     """Process a batch of Meticulous profile files.
 
     Args:
@@ -65,7 +69,9 @@ def process_batch(files: list[Path], output_dir: Path = DEFAULT_OUTPUT_DIR) -> B
             meticulous_data = read_meticulous_json(file_path)
 
             # Translate to Gaggimate format
-            gaggimate_data, _ = translate_profile(meticulous_data)
+            gaggimate_data, _ = translate_profile(
+                meticulous_data, transition_mode=transition_mode
+            )
 
             # Write Gaggimate JSON to output directory
             output_path = write_gaggimate_json(gaggimate_data, file_path.name, output_dir)

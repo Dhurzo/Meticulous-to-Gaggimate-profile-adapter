@@ -68,8 +68,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 20-01-PLAN.md — Add mode flag plumbing to `translate` and CLI output verb
-- [ ] 20-02-PLAN.md — Mirror the flag on `translate-batch` and document default messaging
+- [x] 20-01-PLAN.md — Add mode flag plumbing to `translate` and CLI output verb
+- [x] 20-02-PLAN.md — Mirror the flag on `translate-batch` and document default messaging
 
 ---
 
