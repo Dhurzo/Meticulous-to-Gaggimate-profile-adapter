@@ -45,14 +45,20 @@ uv pip install .
 ```bash
 translate-profile translate "profile.json"  # Output to TranslatedToGaggimate/
 translate-profile translate input.json -o output.json                         # Custom output path
+translate-profile translate "profile.json" --mode preserve                  # Explicit transition mode selection
 ```
+
+The CLI echoes `Translation mode: <mode>` before translating and prints `Mode: <mode>` in the summary logged to the console. Leave the flag off to keep the default `smart` behavior, which balances safety and fidelity.
 
 ### Batch Processing
 
 ```bash
 translate-batch ./profiles/               # Process all .json files
 translate-batch ./profiles/ -o ./output/  # Custom output directory
+translate-batch ./profiles/ --mode linear  # Force uniform transition behavior for every profile
 ```
+
+Batch processing also reports the active mode so you can confirm which mapping was applied across the run, but it still falls back to `smart` when no mode flag is supplied.
 
 ## Requirements
 
@@ -375,6 +381,8 @@ The translator applies different interpolation mappings based on the selected tr
 | instant | instant |
 | bezier | instant |
 | spline | instant |
+
+Use the `--mode`/`--transition-mode` option when running either translate command to pick which of these tables apply. The CLI prints the selected mode before the translation runs so you can confirm it chose the mapping you expect, but the converter itself remains unchanged—only this flag toggles the heuristics listed above. The default `smart` mode balances accuracy and urgency, `preserve` keeps bezier/spline curves intact, `linear` forces all transitions to linear, and `instant` forces everything to fire immediately.
 
 ### Metadata Preservation
 
