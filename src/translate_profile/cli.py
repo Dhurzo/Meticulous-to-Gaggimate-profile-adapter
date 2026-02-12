@@ -51,9 +51,9 @@ DEFAULT_TRANSITION_MODE = "smart"
 
 
 def validate_transition_mode(
+    ctx: typer.Context,
+    param: object | None,
     value: str | None,
-    _: typer.Context | None = None,
-    __: object | None = None,
 ) -> str:
     """Normalize and validate the transition mode option."""
     if value is None:
