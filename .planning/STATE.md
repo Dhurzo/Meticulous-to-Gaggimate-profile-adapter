@@ -7,16 +7,16 @@ Insert. Minor issue notes to next condition
 
 **Core value:** Users can seamlessly adapt their existing Meticulous extraction profiles for use with Gaggimate machines
 
-**Current focus:** v2.3 Field Mappings Review
+**Current focus:** v2.4 Mode Selection Visibility
 
 ## Current Position
 
 | Attribute | Value |
 |-----------|-------|
-| **Phase** | 19 of 21 (Field Mappings Review) |
-| **Plan** | 02 of 3 |
-| **Status** | In progress |
-| **Last activity** | 2026-02-12 - Completed 19-02-PLAN.md |
+| **Phase** | Not started (defining requirements) |
+| **Plan** | — |
+| **Status** | Defining requirements |
+| **Last activity** | 2026-02-12 — Milestone v2.4 started |
 
 ## Performance Metrics
 
@@ -33,9 +33,9 @@ None — v2.3 mapping verification complete. (Unrelated pytest failures remain, 
 
 ## Session Continuity
 
-**Previous session:** 2026-02-12 — v2.3 milestone started
+**Previous session:** 2026-02-12 — v2.3 milestone completed
 **Last session:** 2026-02-12
-Stopped at: Completed 19-02-PLAN.md
+Stopped at: Starting milestone v2.4 requirements discussion
 Resume file: None
 
 ---
@@ -48,9 +48,9 @@ Resume file: None
 | 19    | 02   | Deduplication always keeps first, warns | Prevents ambiguous/contradictory exits |
 
 ## Next Phase Readiness
-All field mapping verification, warning, and deduplication logic confirmed; ready for implementation extension in 19-03.
+All validation and documentation work from v2.3 has been captured; ready to define requirements for CLI mode selection and README updates.
 
 ## Progress
-Phase: ██░░ (2/3)         Plan: ███░ (2/3)
+Phase: ○○░░ (0/4)         Plan: —
 
-*State last updated: 2026-02-12 after plan 19-02 completed*
+*State last updated: 2026-02-12 after milestone v2.4 started*

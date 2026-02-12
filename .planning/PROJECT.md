@@ -8,17 +8,15 @@ A tool that converts espresso extraction profiles from **Meticulous** JSON forma
 
 Users can seamlessly adapt their existing Meticulous extraction profiles for use with Gaggimate machines, preserving the intended extraction profile behavior.
 
-## Current Milestone: v2.3 Field Mappings Review
+## Current Milestone: v2.4 Mode Selection Visibility
 
-**Goal:** Review all translation field mappings for accuracy and fix any errors found
+**Goal:** Give users control over the transition mode via the CLI and document how each mode behaves so they can choose intentionally.
 
 **Target features:**
-- Review Stage Type Mapping (Fill/Bloom/Extraction → Gaggimate phases)
-- Review Power-to-Pressure Conversion (0-100 scale → 0-15 bars)
-- Review Dynamics Point Splitting
-- Review Exit Trigger → Exit Target Mapping
-- Review Interpolation Mapping
-- Fix any errors or inconsistencies found
+- Add a `--mode`/`--transition-mode` argument to the `translate` and `translate-batch` commands that passes the selected mode to `translate_profile`.
+- Ensure selecting a mode still defaults to the established `smart` behavior whenever no option is supplied and surface that default in CLI output.
+- Update the README with a usage example, mention of the available modes (smart/preserve/linear/instant), and clear guidance on when to pick each.
+- Highlight in documentation that the conversion logic remains untouched and that the new flag only drives the existing mode mappings.
 
 ## Previous Milestone: v2.2 README Update
 
@@ -62,12 +60,10 @@ Users can seamlessly adapt their existing Meticulous extraction profiles for use
 
 ### Active
 
-- [ ] **v2.3 Field Mappings Review** — Review and fix all translation field mappings (2026-02-12)
-  - Stage Type Mapping review and fix
-  - Power-to-Pressure Conversion review and fix
-  - Dynamics Point Splitting review and fix
-  - Exit Trigger → Exit Target Mapping review and fix
-  - Interpolation Mapping review and fix
+- [ ] **v2.4 Mode Selection Visibility** — Expose transition-mode selection to users and document how to use it (2026-02-12)
+  - CLI accepts a `--mode` argument that limits choices to smart, preserve, linear, or instant.
+  - The default remains `smart`; any other selection maps directly to the pre-existing interpolation mappings.
+  - README includes a concrete example showing how to call the command with a non-default mode and explains the visual impact of each mode.
 
 ### Out of Scope
 
@@ -75,7 +71,7 @@ Users can seamlessly adapt their existing Meticulous extraction profiles for use
 - Custom interpolation types (bezier, spline)
 - Conditional execution logic
 - User-facing visualization
-- Exit mode strategies (SMART/PRESERVE for exits) — Requires semantic definition
+- Translation core changes — This milestone only adds a CLI flag and docs (conversion logic stays the same)
 - Cross-phase cumulative weight tracking — Complex, low priority
 
 ## Context
@@ -124,4 +120,4 @@ Users can seamlessly adapt their existing Meticulous extraction profiles for use
 
 ---
 
-*Last updated: 2026-02-12 after v2.3 milestone started*
+*Last updated: 2026-02-12 after v2.4 milestone started*

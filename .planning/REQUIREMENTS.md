@@ -3,76 +3,43 @@
 **Defined:** 2026-02-12
 **Core Value:** Users can seamlessly adapt their existing Meticulous extraction profiles for use with Gaggimate machines
 
-## v2.3 Requirements
+## Validated
+- ✅ **v2.3 Field Mappings Review** — All stage, power, dynamics, exit trigger, and interpolation mappings verified and documented (2026-02-12)
 
-Field mappings review and error fixes. All mappings verified against actual implementation.
+## v2.4 Requirements
 
-### Stage Type Mapping
+### CLI Mode Flag
+- [ ] **CLI-01**: `translate-profile translate` accepts `--mode`/`--transition-mode` (choices: smart, preserve, linear, instant) and forwards the selection into `translate_profile`.
+- [ ] **CLI-02**: `translate-profile translate-batch` exposes the same flag/choices so batch workflows share consistent behavior and still default to `smart` when the flag is omitted.
+- [ ] **CLI-03**: CLI output echoes the mode in use so users can confirm which translation path ran (default message should say “smart mode”).
 
-- [ ] **STAGE-01**: Verify Fill (power) → preinfusion with pressure pump
-- [ ] **STAGE-02**: Verify Bloom (power) → preinfusion with pressure pump
-- [ ] **STAGE-03**: Verify Extraction (power) → brew with pressure pump
-- [ ] **STAGE-04**: Verify Flow stages → Same phase key with flow pump
-
-### Power-to-Pressure Conversion
-
-- [ ] **POWER-01**: Verify formula: `gaggimate_pressure = meticulous_power / 10.0`
-- [ ] **POWER-02**: Verify 50% → 5.0 bar conversion
-- [ ] **POWER-03**: Verify 90% → 9.0 bar conversion
-- [ ] **POWER-04**: Verify bounds (0-100 → 0-15 bar)
-
-### Dynamics Point Splitting
-
-- [ ] **DYN-01**: Verify single point → one phase with instant transition
-- [ ] **DYN-02**: Verify N points → N-1 phases with linear transitions
-- [ ] **DYN-03**: Verify phase naming: "Original (1/N)", "Original (2/N)"
-- [ ] **DYN-04**: Verify duration calculation for split phases
-
-### Exit Trigger → Exit Target Mapping
-
-- [ ] **EXIT-01**: Verify weight → volumetric type conversion
-- [ ] **EXIT-02**: Verify time → time passthrough
-- [ ] **EXIT-03**: Verify pressure → pressure passthrough
-- [ ] **EXIT-04**: Verify flow → flow passthrough
-
-### Interpolation Mapping
-
-- [ ] **INTERP-01**: Verify linear → linear transition
-- [ ] **INTERP-02**: Verify step/instant → instant transition
-- [ ] **INTERP-03**: Verify bezier/spline → ease-in-out transition
-- [ ] **INTERP-04**: Verify other → instant transition (fallback)
-
-### Documentation Fixes
-
-- [ ] **DOC-01**: Fix any incorrect mappings found in README.md
-- [ ] **DOC-02**: Fix any incorrect formulas or examples
-- [ ] **DOC-03**: Update tables to match actual implementation
+### Documentation
+- [ ] **DOC-01**: README quick-start includes a concrete example showing `translate-profile translate input.json --mode preserve` (or equivalent) and explains which file is produced.
+- [ ] **DOC-02**: README describes all available modes (smart, preserve, linear, instant), summarizes their visual impact (how interpolation mapping changes), and highlights that only the CLI argument changes the mode (translation logic unchanged).
 
 ## Out of Scope
-
 | Feature | Reason |
 |---------|--------|
-| Bidirectional conversion | One-way translation only |
-| Custom interpolation types | Already documented as simplified |
-| Exit mode strategies | Requires separate semantic definition |
-| Cross-phase cumulative weight | Complex, low priority |
+| Bidirectional conversion | Out of scope for this milestone and already documented as future work |
+| Custom interpolation types (bezier, spline) | Already simplified in existing heuristic; no change needed |
+| Conditional execution logic | Requires architectural work outside this CLI/documentation effort |
+| Translation core changes | The mode flag must drive existing mappings without touching interpolation logic |
+| Cross-phase cumulative weight tracking | Complex feature deferred for future milestones |
 
 ## Traceability
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAGE-01 through STAGE-04 | Phase 19 | Pending |
-| POWER-01 through POWER-04 | Phase 19 | Pending |
-| DYN-01 through DYN-04 | Phase 19 | Pending |
-| EXIT-01 through EXIT-04 | Phase 19 | Pending |
-| INTERP-01 through INTERP-04 | Phase 19 | Pending |
-| DOC-01 through DOC-03 | Phase 19 | Pending |
+| CLI-01 | Phase 20 | Pending |
+| CLI-02 | Phase 20 | Pending |
+| CLI-03 | Phase 20 | Pending |
+| DOC-01 | Phase 21 | Pending |
+| DOC-02 | Phase 21 | Pending |
 
 **Coverage:**
-- v2.3 requirements: 23 total
-- Mapped to phases: 23
+- v2.4 requirements: 5 total
+- Mapped to phases: 5
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after v2.3 milestone started*
+*Last updated: 2026-02-12 after v2.4 milestone started*
