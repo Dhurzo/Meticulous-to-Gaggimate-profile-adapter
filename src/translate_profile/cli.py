@@ -1,7 +1,8 @@
 """CLI interface for the profile translator."""
 
+import os
 from pathlib import Path
-from typing import Annotated, Callable
+from typing import Annotated
 
 import typer
 from pydantic import ValidationError
@@ -47,22 +48,17 @@ def callback(
 
 
 TRANSITION_MODE_CHOICES: tuple[str, ...] = ("smart", "preserve", "linear", "instant")
+ENV_TRANSITION_VAR = "ESPRESSO_TRANSITION"
 DEFAULT_TRANSITION_MODE = "smart"
 
 
-def validate_transition_mode(
-    ctx: typer.Context,
-    param: object | None,
-    value: str | None,
-) -> str:
-    """Normalize and validate the transition mode option."""
-    if value is None:
-        return DEFAULT_TRANSITION_MODE
-
-    normalized = value.lower()
+def resolve_transition_mode(mode: str | None = None) -> str:
+    """Normalize the requested mode and honor the env var fallback."""
+    candidate = mode or os.environ.get(ENV_TRANSITION_VAR) or DEFAULT_TRANSITION_MODE
+    normalized = candidate.lower()
     if normalized not in TRANSITION_MODE_CHOICES:
         raise typer.BadParameter(
-            f"Invalid mode '{value}'. Choose from: {', '.join(TRANSITION_MODE_CHOICES)}."
+            f"Invalid mode '{candidate}'. Choose from: {', '.join(TRANSITION_MODE_CHOICES)}."
         )
     return normalized
 
@@ -88,15 +84,13 @@ def translate(
         ),
     ] = None,
     mode: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--mode",
             "--transition-mode",
-            callback=validate_transition_mode,
-            case_sensitive=False,
             help="Select the transition mode (smart, preserve, linear, instant).",
         ),
-    ] = DEFAULT_TRANSITION_MODE,
+    ] = None,
 ) -> None:
     """Translate a Meticulous profile to Gaggimate format.
 
@@ -106,8 +100,9 @@ def translate(
     """
     try:
         # Read input file
+        mode_value = resolve_transition_mode(mode)
         typer.echo(f"Reading input file: {input_file}")
-        typer.echo(f"Translation mode: {mode}")
+        typer.echo(f"Translation mode: {mode_value}")
         meticulous_data = read_meticulous_json(input_file)
 
         # Determine output path
@@ -121,7 +116,7 @@ def translate(
         # Call the translation engine
         try:
             gaggimate_data, translation_warnings = translate_profile(
-                meticulous_data, transition_mode=mode
+                meticulous_data, transition_mode=mode_value
             )
         except ValidationError as e:
             # Human-readable Pydantic errors
@@ -184,19 +179,18 @@ def translate_batch(
         ),
     ] = None,
     mode: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--mode",
             "--transition-mode",
-            callback=validate_transition_mode,
-            case_sensitive=False,
             help="Select the transition mode for the batch (smart, preserve, linear, instant).",
         ),
-    ] = DEFAULT_TRANSITION_MODE,
+    ] = None,
 ) -> None:
     """Process all Meticulous profiles in a directory."""
     try:
-        typer.echo(f"Translation mode: {mode}")
+        mode_value = resolve_transition_mode(mode)
+        typer.echo(f"Translation mode: {mode_value}")
         # Set output directory
         if output is None:
             output_dir = DEFAULT_OUTPUT_DIR
@@ -215,13 +209,13 @@ def translate_batch(
         typer.echo("Processing profiles...")
 
         # Process batch
-        result = process_batch(json_files, output_dir, transition_mode=mode)
+        result = process_batch(json_files, output_dir, transition_mode=mode_value)
 
         # Display comprehensive results summary
         typer.echo(
             f"\n📊 Summary: Processed {result.processed} files, Successful: {result.successful}, Failed: {result.failed}"
         )
-        typer.echo(f"Mode: {mode}")
+        typer.echo(f"Mode: {mode_value}")
 
         # Show results for each file with clear status
         typer.echo("\n📋 Results:")

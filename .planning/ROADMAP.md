@@ -2,9 +2,9 @@
 
 ## Milestones
 
-- ⚙️ **v2.4 Mode Selection Visibility** — Phases 20‑21 (in progress)
+- ⚙️ **v2.4 Mode Selection Visibility** — Phases 20‑23 (shipped 2026-02-12)
   - Goal: Let users pick the transition mode from the CLI and document how each option alters the output.
-  - Requirements mapped: CLI-01 through DOC-02 (5 requirements)
+  - Requirements mapped: CLI-01 through CLI-04 plus DOC-01/02 (6 requirements)
 - ✅ **v2.3 Field Mappings Review** — Phase 19 (shipped 2026-02-12)
 - ✅ **v2.2 README Update** — Phases 17-18 (shipped 2026-02-12) — [details](milestones/v2.2-ROADMAP.md)
 - ✅ **v2.1 README Documentation** — Phase 16 (shipped 2026-02-11) — [details](milestones/v2.1-ROADMAP.md)
@@ -118,8 +118,29 @@ Plans:
 
 ---
 
-_Phase 22+: Run `/gsd-new-milestone` to define next goals_
+### 🌱 Phase 23: Mode Defaults via Environment
+
+**Goal:** Allow automation to preset the transition mode through `ESPRESSO_TRANSITION` while keeping the CLI flag pathway intact and defaulting to smart when nothing is configured.
+
+**Target features:**
+- CLI resolves `ESPRESSO_TRANSITION` before falling back to `smart`, emitting the resulting mode every time and letting `--mode` override it.
+- Both `translate` and `translate-batch` command tests cover the env-var-only path so regressions are caught.
+- README Usage and Quick Reference mention the env var, supported values, and the precedence between the env var and CLI flags.
+
+**Requirements mapped:** CLI-04
+
+**Success Criteria:**
+1. Environment variable fallback runs before relying on the CLI default and propagates into the translation engine.
+2. Tests fail if a supported env var value produces the wrong `Translation mode:` or `Mode:` line.
+3. Documentation explicitly describes the fallback order and available values.
+
+**Plans:** 1 plan
+
+Plans:
+- [x] 23-01-PLAN.md — Add env-var fallback + README linkage
+
+_Phase 23+: Run `/gsd-new-milestone` to define next goals_
 
 ---
 
-*Last updated: 2026-02-12 after v2.4 milestone started*
+*Last updated: 2026-02-12 after v2.4 Mode Selection Visibility completed*

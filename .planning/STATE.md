@@ -7,16 +7,16 @@ Insert. Minor issue notes to next condition
 
 **Core value:** Users can seamlessly adapt their existing Meticulous extraction profiles for use with Gaggimate machines
 
-**Current focus:** v2.4 Mode Selection Visibility (mode verification)
+**Current focus:** v2.4 Mode Selection Visibility (mode defaults via env var)
 
 ## Current Position
 
 | Attribute | Value |
 |-----------|-------|
-| **Phase** | 22 of 22 (Mode Verification Tests) |
-| **Plan** | 01 of 01 (tests executed) |
+| **Phase** | 23 of 23 (Mode Defaults via Environment) |
+| **Plan** | 01 of 01 (env-var fallback + docs) |
 | **Status** | Execution complete (phase verified) |
-| **Last activity** | 2026-02-12 — Phase 22 tests verified |
+| **Last activity** | 2026-02-12 — Env-var fallback, tests, and docs verified |
 
 ## Performance Metrics
 
@@ -27,15 +27,15 @@ Insert. Minor issue notes to next condition
 
 ## Blockers
 
-None — v2.3 mapping verification complete. (Unrelated pytest failures remain, tracked in Issues, not blocking this milestone.)
+None — v2.4 Mode Selection Visibility is complete and no blockers remain.
 
 ---
 
 ## Session Continuity
 
-**Previous session:** 2026-02-12 — v2.3 milestone completed
+**Previous session:** 2026-02-12 — Phase 22 mode verification tests
 **Last session:** 2026-02-12
-Stopped at: Starting milestone v2.4 requirements discussion
+Stopped at: Phase 23 env-var fallback execution
 Resume file: None
 
 ---
@@ -48,9 +48,9 @@ Resume file: None
 | 19    | 02   | Deduplication always keeps first, warns | Prevents ambiguous/contradictory exits |
 
 ## Next Phase Readiness
-All validation and documentation work from v2.3 has been captured; ready to define requirements for CLI mode selection and README updates.
+v2.4 Mode Selection Visibility now satisfies CLI-01 through CLI-04 plus DOC-01/02; ready to run `/gsd-new-milestone` for the next priority area.
 
 ## Progress
-Phase: ○○░░ (0/4)         Plan: —
+Phase: █████ (23/23)         Plan: 01 (complete)
 
-*State last updated: 2026-02-12 after milestone v2.4 started*
+*State last updated: 2026-02-12 after v2.4 Mode Selection Visibility completed*

@@ -48,7 +48,7 @@ translate-profile translate input.json -o output.json                         # 
 translate-profile translate "profile.json" --mode preserve                  # Explicit transition mode selection
 ```
 
-The CLI echoes `Translation mode: <mode>` before translating and prints `Mode: <mode>` in the summary logged to the console. Leave the flag off to keep the default `smart` behavior, which balances safety and fidelity.
+The CLI echoes `Translation mode: <mode>` before translating (and `Mode: <mode>` in batch summaries) so you can confirm what ran. `--mode`/`--transition-mode` overrides everything, but when those flags are absent both commands look for `ESPRESSO_TRANSITION` (smart/preserve/linear/instant) before falling back to `smart`, letting automation preselect a mode without changing the command line.
 
 ### Batch Processing
 

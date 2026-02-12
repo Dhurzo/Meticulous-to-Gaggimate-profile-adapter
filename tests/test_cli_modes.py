@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -8,12 +9,12 @@ SINGLE = [CLI, "translate", "tests/fixtures/batch_test_data/valid_profiles/profi
 BATCH = [CLI, "translate-batch", "tests/fixtures/batch_test_data/valid_profiles"]
 
 
-def run_cli(cmd, mode=None):
+def run_cli(cmd, mode=None, env=None):
     args = cmd.copy()
     if mode:
         args.append("--mode")
         args.append(mode)
-    result = subprocess.run(args, capture_output=True, text=True)
+    result = subprocess.run(args, capture_output=True, text=True, env={**os.environ, **(env or {})})
     output = result.stdout + result.stderr
     return result.returncode, output
 
@@ -44,3 +45,14 @@ def test_translate_batch_mode():
     code, out = run_cli(BATCH)
     assert_mode_lines(out, "smart")
     assert code in (0, 1)
+
+
+def test_env_var_mode():
+    env = {"ESPRESSO_TRANSITION": "preserve"}
+    returncode, output = run_cli(SINGLE, env=env)
+    assert_mode_lines(output, "preserve", expect_summary=False)
+    assert returncode in (0, 1)
+
+    returncode, output = run_cli(BATCH, env=env)
+    assert_mode_lines(output, "preserve")
+    assert returncode in (0, 1)
