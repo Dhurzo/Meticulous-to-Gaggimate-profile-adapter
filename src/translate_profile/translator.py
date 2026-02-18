@@ -52,7 +52,7 @@ PRESERVE_INTERPOLATION_MAP = {
     "spline": "spline",
 }
 
-VAR_PATTERN = re.compile(r"\$(\w+)\b")
+VAR_PATTERN = re.compile(r"^\$(.+)$")
 
 
 def resolve_variables(data: dict[str, Any], max_depth: int = 10) -> dict[str, Any]:
