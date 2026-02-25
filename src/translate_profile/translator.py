@@ -55,6 +55,74 @@ PRESERVE_INTERPOLATION_MAP = {
 VAR_PATTERN = re.compile(r"^\$(.+)$")
 
 
+def _create_pump_settings(
+    stage_type: str,
+    stage_key: str,
+    target_value: float,
+    min_bloom_pressure: float = MIN_BLOOM_PRESSURE,
+) -> PumpSettings:
+    key_lower = stage_key.lower()
+    is_bloom = key_lower in ("bloom", "blooming")
+
+    if is_bloom:
+        return PumpSettings(
+            target="pressure",
+            pressure=max(target_value, min_bloom_pressure),
+            flow=0.0,
+        )
+
+    if stage_type == "power":
+        return PumpSettings(
+            target="pressure",
+            pressure=target_value / 10.0,
+            flow=10.0,
+        )
+
+    if stage_type == "flow":
+        return PumpSettings(
+            target="flow",
+            flow=target_value,
+            pressure=12.0,
+        )
+
+    if stage_type == "pressure":
+        pump = PumpSettings(
+            target="pressure",
+            pressure=target_value,
+            flow=10.0,
+        )
+        validate_pressure_range(target_value, stage_key)
+        return pump
+
+    raise ValueError(
+        f"Unknown stage type: {stage_type}. Expected 'power', 'flow', or 'pressure'."
+    )
+
+
+def _calculate_stage_duration(
+    stage_type: str,
+    num_points: int,
+    points: list,
+    exit_triggers: list,
+) -> float:
+    for trigger in exit_triggers:
+        if trigger.type == "time":
+            return trigger.value
+
+    if stage_type == "pressure":
+        if num_points == 1 and len(points[0]) >= 2:
+            p1 = points[0][1]
+            p0 = 0.0
+            delta = abs(p1 - p0)
+            return 1.5 if delta > 3.0 else 4.0
+        return 4.0
+
+    if stage_type == "flow":
+        return 4.0
+
+    return 30.0
+
+
 def resolve_variables(data: dict[str, Any], max_depth: int = 10) -> dict[str, Any]:
     """
     Resolve variable references ($var_name) in Meticulous profile data.
@@ -188,6 +256,14 @@ def find_unresolved_variables(data: dict[str, Any]) -> list[dict[str, str]]:
     return unresolved
 
 
+INTERPOLATION_MAPS = {
+    TRANSITION_MODE_SMART: SMART_INTERPOLATION_MAP,
+    TRANSITION_MODE_PRESERVE: PRESERVE_INTERPOLATION_MAP,
+    TRANSITION_MODE_LINEAR: {"linear": "linear", "step": "linear", "instant": "linear", "bezier": "linear", "spline": "linear"},
+    TRANSITION_MODE_INSTANT: {"linear": "instant", "step": "instant", "instant": "instant", "bezier": "instant", "spline": "instant"},
+}
+
+
 def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TRANSITION_MODE_SMART) -> tuple[dict[str, Any], list[str]]:
     """
     Translates a Meticulous profile to Gaggimate format.
@@ -201,20 +277,10 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
     """
     from .exceptions import UndefinedVariableError
 
-    # Select interpolation map based on transition mode
-    if transition_mode == TRANSITION_MODE_PRESERVE:
-        interpolation_map = PRESERVE_INTERPOLATION_MAP
-    elif transition_mode == TRANSITION_MODE_LINEAR:
-        interpolation_map = {k: "linear" for k in ["linear", "step", "instant", "bezier", "spline"]}
-    elif transition_mode == TRANSITION_MODE_INSTANT:
-        interpolation_map = {k: "instant" for k in ["linear", "step", "instant", "bezier", "spline"]}
-    else:  # Default to smart mode
-        interpolation_map = SMART_INTERPOLATION_MAP
+    interpolation_map = INTERPOLATION_MAPS.get(transition_mode, SMART_INTERPOLATION_MAP)
 
-    # Collect all translation warnings
     translation_warnings: list[str] = []
 
-    # Resolve variable references ($var_name) to concrete values
     meticulous_data = resolve_variables(meticulous_data)
 
     # Check for unresolved variables and enhance error
@@ -255,63 +321,20 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
             # Single point stage logic
             target_value = stage.dynamics.points[0][1] if num_points == 1 else 0.0
 
-            # Map stage type to pump target
-            # Special case: Bloom stages use pressure with zero flow (bloom hold behavior)
-            if stage.key.lower() in ("bloom", "blooming"):
-                pump = PumpSettings(
-                    target="pressure",
-                    pressure=max(target_value, MIN_BLOOM_PRESSURE),
-                    flow=0.0,
-                )
-            elif stage.type == "power":
-                pump = PumpSettings(
-                    target="pressure",
-                    pressure=target_value / 10.0,
-                    flow=10.0,
-                )
-            elif stage.type == "flow":
-                pump = PumpSettings(
-                    target="flow",
-                    flow=target_value,
-                    pressure=12.0,
-                )
-            elif stage.type == "pressure":
-                pump = PumpSettings(
-                    target="pressure",
-                    pressure=target_value,
-                    flow=10.0,
-                )
-                # Validate pressure range
-                validate_pressure_range(target_value, stage.name)
-            else:
-                raise ValueError(
-                    f"Unknown stage type: {stage.type}. Expected 'power', 'flow', or 'pressure'."
-                )
+            # Use helper function to create pump settings
+            pump = _create_pump_settings(
+                stage_type=stage.type,
+                stage_key=stage.key,
+                target_value=target_value,
+            )
 
-            # Duration calculation logic:
-            # Use exit trigger if present, else:
-            # For pressure or flow, use difference from dynamics (pressure delta => fast, flow delta => standard); fallback 30.0
-            duration = None
-            for trigger in stage.exit_triggers:
-                if trigger.type == "time":
-                    duration = trigger.value
-                    break
-
-            if duration is None:
-                if stage.type == "pressure":
-                    if num_points == 1 and len(stage.dynamics.points[0]) >= 2:
-                        # Use fast shot algorithm: delta > 3.0 => 1.5s, else 4.0s
-                        p1 = stage.dynamics.points[0][1]
-                        p0 = 0.0
-                        delta = abs(p1 - p0)
-                        duration = 1.5 if delta > 3.0 else 4.0
-                    else:
-                        duration = 4.0
-                elif stage.type == "flow":
-                    # Default flow stage, fallback 4.0s
-                    duration = 4.0
-                else:
-                    duration = 30.0
+            # Calculate duration using helper
+            duration = _calculate_stage_duration(
+                stage_type=stage.type,
+                num_points=num_points,
+                points=stage.dynamics.points,
+                exit_triggers=stage.exit_triggers,
+            )
 
             if duration <= 0:
                 duration = 0.1
@@ -362,37 +385,12 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
 
                 target_value = p_curr[1]
 
-                # Special case: Bloom stages use pressure with zero flow
-                if stage.key.lower() in ("bloom", "blooming"):
-                    pump = PumpSettings(
-                        target="pressure",
-                        pressure=max(target_value, MIN_BLOOM_PRESSURE),
-                        flow=0.0,
-                    )
-                elif stage.type == "power":
-                    pump = PumpSettings(
-                        target="pressure",
-                        pressure=target_value / 10.0,
-                        flow=10.0,
-                    )
-                elif stage.type == "flow":
-                    pump = PumpSettings(
-                        target="flow",
-                        flow=target_value,
-                        pressure=12.0,
-                    )
-                elif stage.type == "pressure":
-                    pump = PumpSettings(
-                        target="pressure",
-                        pressure=target_value,
-                        flow=10.0,
-                    )
-                    # Validate pressure range
-                    validate_pressure_range(target_value, stage.name)
-                else:
-                    raise ValueError(
-                        f"Unknown stage type: {stage.type}. Expected 'power', 'flow', or 'pressure'."
-                    )
+                # Use helper function to create pump settings
+                pump = _create_pump_settings(
+                    stage_type=stage.type,
+                    stage_key=stage.key,
+                    target_value=target_value,
+                )
 
                 # Transition type mapping based on selected mode
                 # Always force instant for flow, else use mapping

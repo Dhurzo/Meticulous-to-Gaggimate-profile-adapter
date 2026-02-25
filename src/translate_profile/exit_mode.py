@@ -76,53 +76,24 @@ def detect_conflicting_triggers(triggers: list[ExitTrigger]) -> list[str]:
 
 
 def _check_trigger_pair_conflict(trigger_a: ExitTrigger, trigger_b: ExitTrigger) -> str | None:
-    """
-    Check if two triggers of the same type have conflicting conditions.
+    trigger_type = trigger_a.type
+    comp_a, comp_b = trigger_a.comparison, trigger_b.comparison
+    val_a, val_b = trigger_a.value, trigger_b.value
 
-    Args:
-        trigger_a: First ExitTrigger
-        trigger_b: Second ExitTrigger (same type as trigger_a)
+    conflict_rules = [
+        (">=", "<=", lambda a, b: a > b, "{t} >= {a} AND {t} <= {b}"),
+        ("<=", ">=", lambda a, b: b > a, "{t} <= {a} AND {t} >= {b}"),
+        (">", "<", lambda a, b: a >= b, "{t} > {a} AND {t} < {b}"),
+        ("<", ">", lambda a, b: b >= a, "{t} < {a} AND {t} > {b}"),
+        (">=", "<", lambda a, b: a >= b, "{t} >= {a} AND {t} < {b}"),
+        ("<", ">=", lambda a, b: b >= a, "{t} < {a} AND {t} >= {b}"),
+        ("<=", ">", lambda a, b: a < b, "{t} <= {a} AND {t} > {b}"),
+        (">", "<=", lambda a, b: b < a, "{t} > {a} AND {t} <= {b}"),
+    ]
 
-    Returns:
-        Conflict warning message if conflicting, None otherwise
-    """
-    trigger_type = trigger_a.type  # Both triggers have same type
-
-    # Handle >= and <= conflicts (opposite bounds)
-    # >= X AND <= Y is only a conflict if X > Y (impossible range)
-    if trigger_a.comparison == ">=" and trigger_b.comparison == "<=":
-        if trigger_a.value > trigger_b.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} >= {trigger_a.value} AND {trigger_type} <= {trigger_b.value} - conditions can never both be true"
-    elif trigger_a.comparison == "<=" and trigger_b.comparison == ">=":
-        if trigger_b.value > trigger_a.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} <= {trigger_a.value} AND {trigger_type} >= {trigger_b.value} - conditions can never both be true"
-
-    # Handle > and < conflicts
-    # > X AND < Y is only a conflict if X >= Y (impossible range)
-    if trigger_a.comparison == ">" and trigger_b.comparison == "<":
-        if trigger_a.value >= trigger_b.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} > {trigger_a.value} AND {trigger_type} < {trigger_b.value} - conditions can never both be true"
-    elif trigger_a.comparison == "<" and trigger_b.comparison == ">":
-        if trigger_b.value >= trigger_a.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} < {trigger_a.value} AND {trigger_type} > {trigger_b.value} - conditions can never both be true"
-
-    # Handle >= and < conflicts (edge case)
-    # >= X AND < Y is only a conflict if X >= Y (impossible range)
-    if trigger_a.comparison == ">=" and trigger_b.comparison == "<":
-        if trigger_a.value >= trigger_b.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} >= {trigger_a.value} AND {trigger_type} < {trigger_b.value} - conditions can never both be true"
-    elif trigger_a.comparison == "<" and trigger_b.comparison == ">=":
-        if trigger_b.value >= trigger_a.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} < {trigger_a.value} AND {trigger_type} >= {trigger_b.value} - conditions can never both be true"
-
-    # Handle <= and > conflicts
-    # <= X AND > Y is only a conflict if X <= Y (impossible range)
-    if trigger_a.comparison == "<=" and trigger_b.comparison == ">":
-        if trigger_a.value < trigger_b.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} <= {trigger_a.value} AND {trigger_type} > {trigger_b.value} - conditions can never both be true"
-    elif trigger_a.comparison == ">" and trigger_b.comparison == "<=":
-        if trigger_b.value < trigger_a.value:
-            return f"Conflicting {trigger_type} triggers: {trigger_type} > {trigger_a.value} AND {trigger_type} <= {trigger_b.value} - conditions can never both be true"
+    for op_a, op_b, conflict_check, message_template in conflict_rules:
+        if comp_a == op_a and comp_b == op_b and conflict_check(val_a, val_b):
+            return f"Conflicting {trigger_type} triggers: {message_template.format(t=trigger_type, a=val_a, b=val_b)} - conditions can never both be true"
 
     return None
 
