@@ -60,10 +60,11 @@ def test_time_to_time():
     result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
-    assert len(targets) == 1
-    assert targets[0]['type'] == 'time'
-    assert targets[0]['value'] == 25
-    assert targets[0]['operator'] == 'gte'
+    # May have 2 targets (time + volumetric from final_weight)
+    time_targets = [t for t in targets if t['type'] == 'time']
+    assert len(time_targets) == 1
+    assert time_targets[0]['value'] == 25
+    assert time_targets[0]['operator'] == 'gte'
 
 
 # EXIT-03: Pressure triggers convert to pressure targets
@@ -75,10 +76,11 @@ def test_pressure_to_pressure():
     result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
-    assert len(targets) == 1
-    assert targets[0]['type'] == 'pressure'
-    assert targets[0]['value'] == 9
-    assert targets[0]['operator'] == 'gte'
+    # May have 2 targets (pressure + volumetric from final_weight)
+    pressure_targets = [t for t in targets if t['type'] == 'pressure']
+    assert len(pressure_targets) == 1
+    assert pressure_targets[0]['value'] == 9
+    assert pressure_targets[0]['operator'] == 'gte'
 
 
 # EXIT-04: Flow triggers convert to flow targets
@@ -90,10 +92,11 @@ def test_flow_to_flow():
     result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
-    assert len(targets) == 1
-    assert targets[0]['type'] == 'flow'
-    assert targets[0]['value'] == 2
-    assert targets[0]['operator'] == 'gte'
+    # May have 2 targets (flow + volumetric from final_weight)
+    flow_targets = [t for t in targets if t['type'] == 'flow']
+    assert len(flow_targets) == 1
+    assert flow_targets[0]['value'] == 2
+    assert flow_targets[0]['operator'] == 'gte'
 
 
 # EXIT-05: Comparison operators map correctly
@@ -130,7 +133,7 @@ def test_relative_time_conversion():
             'name': 'Test Phase',
             'key': 'Extraction',
             'type': 'pressure',
-            'dynamics': {'points': [[0, 9], [10, 9]], 'over': 'time', 'interpolation': 'linear'},
+            'dynamics': {'points': [[0, 9], [10, 9], [25, 9]], 'over': 'time', 'interpolation': 'linear'},
             'exit_triggers': [
                 # Relative time trigger should convert to absolute: 10 + 5 = 15
                 {'type': 'time', 'value': 5, 'relative': True, 'comparison': '>='},
@@ -139,11 +142,14 @@ def test_relative_time_conversion():
     }
     result, _ = translate_profile(profile)
     # The target should be on the second (final) segment
-    targets = result['phases'][0]['targets']
+    # With 3 points, 2 phases are created (0→10, 10→25)
+    assert len(result['phases']) == 2
+    targets = result['phases'][1]['targets']  # Final phase
     
-    assert len(targets) == 1
-    assert targets[0]['type'] == 'time'
-    assert targets[0]['value'] == 15  # 10 + 5 = 15 (absolute time)
+    # May have 2 targets (time + volumetric from final_weight)
+    time_targets = [t for t in targets if t['type'] == 'time']
+    assert len(time_targets) == 1
+    assert time_targets[0]['value'] == 15  # 10 + 5 = 15 (absolute time)
 
 
 # EXIT-07: All trigger types convert in single pass
@@ -240,9 +246,10 @@ def test_absolute_time_preserved():
     result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
-    assert len(targets) == 1
-    assert targets[0]['type'] == 'time'
-    assert targets[0]['value'] == 30  # Value should be preserved as-is
+    # May have 2 targets (time + volumetric from final_weight)
+    time_targets = [t for t in targets if t['type'] == 'time']
+    assert len(time_targets) == 1
+    assert time_targets[0]['value'] == 30  # Value should be preserved as-is
 
 
 # Test all comparison operators with different trigger types
@@ -263,9 +270,10 @@ def test_all_operators_with_all_types(trigger_type, trigger_value):
     result, _ = translate_profile(profile)
     targets = result['phases'][0]['targets']
     
+    # Filter by the expected type (weight converts to volumetric)
+    expected_type = 'volumetric' if trigger_type == 'weight' else trigger_type
+    filtered_targets = [t for t in targets if t['type'] == expected_type]
+    
     # Due to deduplication, only first trigger of each type should be kept
-    assert len(targets) == 1
-    assert targets[0]['type'] == (
-        'volumetric' if trigger_type == 'weight' else trigger_type
-    )
-    assert targets[0]['operator'] == 'gte'  # First operator used
+    assert len(filtered_targets) == 1
+    assert filtered_targets[0]['operator'] == 'gte'  # First operator used

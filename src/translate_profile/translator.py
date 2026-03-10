@@ -55,6 +55,21 @@ PRESERVE_INTERPOLATION_MAP = {
 VAR_PATTERN = re.compile(r"^\$(.+)$")
 
 
+def _convert_limits_to_targets(limits: list[dict]) -> list[ExitTarget]:
+    """Convert Meticulous stage limits to Gaggimate exit targets."""
+    targets: list[ExitTarget] = []
+    for limit in limits:
+        if limit.get("type") == "pressure":
+            limit_value = limit.get("value", 0)
+            target = ExitTarget(
+                type="pressure",
+                operator="lte",
+                value=limit_value,
+            )
+            targets.append(target)
+    return targets
+
+
 def _create_pump_settings(
     stage_type: str,
     stage_key: str,
@@ -82,7 +97,7 @@ def _create_pump_settings(
         return PumpSettings(
             target="flow",
             flow=target_value,
-            pressure=12.0,
+            pressure=9.0,
         )
 
     if stage_type == "pressure":
@@ -118,7 +133,7 @@ def _calculate_stage_duration(
         return 4.0
 
     if stage_type == "flow":
-        return 4.0
+        return 30.0
 
     return 30.0
 
@@ -345,6 +360,10 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
             import warnings as py_warnings
             for warning in exit_warnings:
                 py_warnings.warn(warning)
+            
+            # Convert limits to targets
+            limit_targets = _convert_limits_to_targets(stage.limits)
+            targets.extend(limit_targets)
 
             cumulative_time += duration  # Update cumulative time for next stage
 
@@ -409,12 +428,18 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
                 # Only add exit triggers to the final phase of a split stage
                 targets = []
                 if i == num_points - 1:  # Final segment
-                    targets, exit_warnings = exit_mode_convert(stage.exit_triggers, phase_start_time=stage_start_time)
+                    # For multi-point stages, use cumulative time as phase start time
+                    # This ensures relative time triggers are calculated correctly
+                    targets, exit_warnings = exit_mode_convert(stage.exit_triggers, phase_start_time=cumulative_time)
                     translation_warnings.extend(exit_warnings)
                     # Emit warnings for test compatibility
                     import warnings as py_warnings
                     for warning in exit_warnings:
                         py_warnings.warn(warning)
+                    
+                    # Convert limits to targets
+                    limit_targets = _convert_limits_to_targets(stage.limits)
+                    targets.extend(limit_targets)
 
                 cumulative_time += phase_duration  # Update cumulative time for next segment
 
@@ -429,6 +454,18 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
                     targets=targets,
                 )
                 phases.append(phase)
+    
+    # Add final_weight as volumetric target to last phase
+    if meticulous.final_weight > 0 and phases:
+        final_weight_target = ExitTarget(
+            type="volumetric",
+            operator="gte",
+            value=meticulous.final_weight,
+        )
+        # Add to last phase targets (don't duplicate if volumetric target already exists)
+        last_phase_targets = phases[-1].targets
+        if not any(t.type == "volumetric" for t in last_phase_targets):
+            phases[-1].targets.append(final_weight_target)
 
     gaggimate = GaggimateProfile(
         label=meticulous.name,

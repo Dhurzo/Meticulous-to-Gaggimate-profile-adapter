@@ -81,6 +81,7 @@ def test_flow_to_flow_mapping():
     pump = result["phases"][0]["pump"]
     assert pump["target"] == "flow"
     assert pump["flow"] == 2.5
+    assert pump["pressure"] == 9.0
 
 
 def test_exit_triggers_and_operators():
