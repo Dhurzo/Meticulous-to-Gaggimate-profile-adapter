@@ -75,6 +75,7 @@ def _create_pump_settings(
     stage_key: str,
     target_value: float,
     min_bloom_pressure: float = MIN_BLOOM_PRESSURE,
+    pressure_limit: float | None = None,
 ) -> PumpSettings:
     key_lower = stage_key.lower()
     is_bloom = key_lower in ("bloom", "blooming")
@@ -94,10 +95,11 @@ def _create_pump_settings(
         )
 
     if stage_type == "flow":
+        flow_pressure = pressure_limit if pressure_limit is not None else 9.0
         return PumpSettings(
             target="flow",
             flow=target_value,
-            pressure=9.0,
+            pressure=flow_pressure,
         )
 
     if stage_type == "pressure":
@@ -336,11 +338,20 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
             # Single point stage logic
             target_value = stage.dynamics.points[0][1] if num_points == 1 else 0.0
 
+            # Extract pressure limit from stage limits if available
+            pressure_limit = None
+            if stage.type == "flow":
+                for limit in stage.limits:
+                    if limit.get("type") == "pressure":
+                        pressure_limit = limit.get("value")
+                        break
+
             # Use helper function to create pump settings
             pump = _create_pump_settings(
                 stage_type=stage.type,
                 stage_key=stage.key,
                 target_value=target_value,
+                pressure_limit=pressure_limit,
             )
 
             # Calculate duration using helper
@@ -393,6 +404,14 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
             phases.append(phase)
         else:
             # Multi-point dynamics splitting (Task 1)
+            # Extract pressure limit from stage limits if available (for flow stages)
+            pressure_limit = None
+            if stage.type == "flow":
+                for limit in stage.limits:
+                    if limit.get("type") == "pressure":
+                        pressure_limit = limit.get("value")
+                        break
+
             for i in range(1, num_points):
                 p_prev = stage.dynamics.points[i - 1]
                 p_curr = stage.dynamics.points[i]
@@ -409,6 +428,7 @@ def translate_profile(meticulous_data: dict[str, Any], transition_mode: str = TR
                     stage_type=stage.type,
                     stage_key=stage.key,
                     target_value=target_value,
+                    pressure_limit=pressure_limit,
                 )
 
                 # Transition type mapping based on selected mode
