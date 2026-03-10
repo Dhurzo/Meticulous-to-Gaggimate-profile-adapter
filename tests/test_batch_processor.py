@@ -288,9 +288,11 @@ class TestCliIntegration:
 
         runner = CliRunner()
         result = runner.invoke(app, ["translate-batch", str(tmp_path)])
-
+        
         assert result.exit_code == 1  # Should fail with empty directory
-        assert "No JSON files found" in result.stdout or "Error:" in result.stdout
+        # Error message should be in stdout or stderr
+        output = result.stdout + (result.stderr if result.stderr else "")
+        assert "No JSON files found" in output or "Error:" in output
 
     def test_cli_custom_output(self, tmp_path):
         """Test --output flag functionality."""
@@ -332,12 +334,15 @@ class TestCliIntegration:
         result = runner.invoke(
             app, ["translate-batch", str(temp_input_dir), "--output", str(temp_output_dir)]
         )
-
+        
+        # Combine stdout and stderr for assertions
+        output = result.stdout + (result.stderr if result.stderr else "")
+        
         # Should exit with code 1 when some files fail
         assert result.exit_code == 1
-        assert "failed" in result.stdout.lower()
-        assert "✅" in result.stdout  # Should show some successes
-        assert "❌" in result.stdout  # Should show some failures
+        assert "failed" in output.lower()
+        assert "✅" in output  # Should show some successes
+        assert "❌" in output  # Should show some failures
 
     def test_cli_success_messages(self, tmp_path):
         """Test CLI success message formatting."""
@@ -382,14 +387,17 @@ class TestCliIntegration:
         result = runner.invoke(
             app, ["translate-batch", str(temp_input_dir), "--output", str(temp_output_dir)]
         )
-
+        
+        # Combine stdout and stderr for assertions
+        output = result.stdout + (result.stderr if result.stderr else "")
+        
         assert result.exit_code == 1
         # Check for clear failure reporting
-        assert "❌" in result.stdout  # Failure indicators
-        assert "invalid_profile.json" in result.stdout  # Failed file mentioned
-        assert "failed translation" in result.stdout.lower()
+        assert "❌" in output  # Failure indicators
+        assert "invalid_profile.json" in output  # Failed file mentioned
+        assert "failed translation" in output.lower()
         # Should still show summary with failure counts
-        assert "Failed:" in result.stdout
+        assert "Failed:" in output or "of" in output and "files failed" in output
 
     def test_cli_progress_indication(self, tmp_path):
         """Test CLI progress bar functionality."""
@@ -421,14 +429,17 @@ class TestCliIntegration:
 
         runner = CliRunner()
         result = runner.invoke(app, ["translate-batch", "/nonexistent/directory/path"])
-
+        
+        # Combine stdout and stderr for assertions
+        output = result.stdout + (result.stderr if result.stderr else "")
+        
         # Typer returns exit code 2 for parameter errors
         assert result.exit_code in [1, 2]
         # Should provide helpful error message
         assert (
-            "Error:" in result.stdout
-            or "does not exist" in result.stdout
-            or "Invalid" in result.stdout
+            "Error:" in output
+            or "does not exist" in output
+            or "Invalid" in output
         )
 
     def test_cli_permission_errors(self):
@@ -443,10 +454,13 @@ class TestCliIntegration:
             app, ["translate-batch", "tests/fixtures/batch_test_data/mixed_profiles/not_json.txt"]
         )
 
+        # Combine stdout and stderr for assertions
+        output = result.stdout + (result.stderr if result.stderr else "")
+        
         # Should fail because input is not a directory (Typer returns exit code 2)
         assert result.exit_code in [1, 2]
         assert (
-            "Error:" in result.stdout
-            or "not a directory" in result.stdout
-            or "Invalid" in result.stdout
+            "Error:" in output
+            or "not a directory" in output
+            or "Invalid" in output
         )

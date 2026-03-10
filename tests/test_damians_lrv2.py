@@ -10,10 +10,10 @@ def test_damians_lrv2_translation():
     # Load Damians LRv2.json
     with open("Damians LRv2.json") as f:
         data = json.load(f)
-
+    
     # Translate
-    result = translate_profile(data)
-
+    result, _ = translate_profile(data)
+    
     # Verify we have 7 phases
     assert len(result["phases"]) == 7
     print(f"✓ Profile has {len(result['phases'])} phases")
@@ -41,8 +41,8 @@ def test_damians_lrv2_flow_limit_phase():
     """Test Flow Limit phase uses flow target."""
     with open("Damians LRv2.json") as f:
         data = json.load(f)
-
-    result = translate_profile(data)
+    
+    result, _ = translate_profile(data)
     flow_phase = result["phases"][-1]
 
     assert flow_phase["pump"]["target"] == "flow"
@@ -53,14 +53,14 @@ def test_damians_lrv2_flow_limit_phase():
 def test_damians_lrv2_all_pressures_in_range():
     """Test all pressure values are in valid range (1-10 bar typical)."""
     import warnings
-
+    
     with open("Damians LRv2.json") as f:
         data = json.load(f)
-
+    
     # Should not trigger any warnings (all pressures in range)
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        result = translate_profile(data)
+        result, _ = translate_profile(data)
 
         # Filter for pressure-related warnings
         pressure_warnings = [warning for warning in w if "pressure" in str(warning.message)]

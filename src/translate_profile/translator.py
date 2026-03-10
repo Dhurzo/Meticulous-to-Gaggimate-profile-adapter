@@ -82,7 +82,7 @@ def _create_pump_settings(
     if is_bloom:
         return PumpSettings(
             target="pressure",
-            pressure=max(target_value, min_bloom_pressure),
+            pressure=max(target_value / 10.0, min_bloom_pressure),
             flow=0.0,
         )
 
