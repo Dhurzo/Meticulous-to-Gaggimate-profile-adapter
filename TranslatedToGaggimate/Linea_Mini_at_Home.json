@@ -1,0 +1,38 @@
+{
+  "label": "Linea Mini at Home",
+  "type": "pro",
+  "description": "Meticulous ID: 4cb2c688-cac7-4ee0-bab5-1f8f8f9a4a55\nAuthor: IronLapin\nOriginal Name: Linea Mini at Home",
+  "temperature": 93.0,
+  "utility": false,
+  "phases": [
+    {
+      "name": "Brew",
+      "phase": "flow_1",
+      "valve": 1,
+      "duration": 30.0,
+      "temperature": 93.0,
+      "transition": {
+        "type": "instant",
+        "duration": 0.0,
+        "adaptive": false
+      },
+      "pump": {
+        "target": "flow",
+        "pressure": 6.5,
+        "flow": 11.3
+      },
+      "targets": [
+        {
+          "type": "pressure",
+          "operator": "gte",
+          "value": 6.5
+        },
+        {
+          "type": "volumetric",
+          "operator": "gte",
+          "value": 38.0
+        }
+      ]
+    }
+  ]
+}

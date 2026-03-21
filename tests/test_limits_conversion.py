@@ -28,7 +28,7 @@ def test_pressure_limits_convert_to_pressure_targets():
     pressure_targets = [t for t in targets if t['type'] == 'pressure']
     assert len(pressure_targets) == 1
     assert pressure_targets[0]['value'] == 6.5
-    assert pressure_targets[0]['operator'] == 'lte'
+    assert pressure_targets[0]['operator'] == 'gte'
 
 
 def test_multiple_pressure_limits():
@@ -152,7 +152,7 @@ def test_limits_with_exit_triggers():
     
     # Check that the limit pressure target exists with correct operator
     pressure_targets = [t for t in targets if t['type'] == 'pressure']
-    limit_target = [t for t in pressure_targets if t['operator'] == 'lte']
+    limit_target = [t for t in pressure_targets if t['operator'] == 'gte']
     assert len(limit_target) == 1
     assert limit_target[0]['value'] == 6.5
 
@@ -192,4 +192,4 @@ def test_limits_in_multi_point_stage():
     pressure_targets = [t for t in last_phase_targets if t['type'] == 'pressure']
     assert len(pressure_targets) == 1
     assert pressure_targets[0]['value'] == 8.0
-    assert pressure_targets[0]['operator'] == 'lte'
+    assert pressure_targets[0]['operator'] == 'gte'

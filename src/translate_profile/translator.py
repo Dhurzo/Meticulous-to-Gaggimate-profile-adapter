@@ -63,7 +63,7 @@ def _convert_limits_to_targets(limits: list[dict]) -> list[ExitTarget]:
             limit_value = limit.get("value", 0)
             target = ExitTarget(
                 type="pressure",
-                operator="lte",
+                operator="gte",
                 value=limit_value,
             )
             targets.append(target)
